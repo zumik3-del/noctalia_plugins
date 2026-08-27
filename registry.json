@@ -9,6 +9,16 @@
       "tags": ["Bar", "Utility", "Screen Recording"],
       "official": false,
       "minNoctaliaVersion": "3.0.0"
+    },
+    {
+      "id": "opencode-go-usage",
+      "name": "Opencode Go Usage",
+      "description": "Shows Opencode Go (Zen) AI coding assistant usage limits (5h / weekly / monthly) in the bar, pulled from the opencode.ai console via workspace ID + session cookie.",
+      "version": "0.1.0",
+      "author": "zumik3-del",
+      "tags": ["Bar", "Productivity", "AI"],
+      "official": false,
+      "minNoctaliaVersion": "3.6.0"
     }
   ]
 }

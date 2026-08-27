@@ -1,0 +1,39 @@
+{
+  "id": "opencode-go-usage",
+  "name": "Opencode Go Usage",
+  "version": "0.1.0",
+  "minNoctaliaVersion": "3.6.0",
+  "author": "zumik",
+  "license": "MIT",
+  "repository": "https://github.com/zumik3-del/screenrec",
+  "description": "Shows Opencode Go (Zen) AI coding assistant usage limits (5h / weekly / monthly) in the bar, pulled from the opencode.ai console via workspace ID + session cookie.",
+  "tags": [
+    "Bar",
+    "Productivity",
+    "AI"
+  ],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "providers": {
+        "opencodeGo": {
+          "enabled": false,
+          "workspaceId": "",
+          "cookie": ""
+        }
+      },
+      "barDisplayMode": "active",
+      "barCycleIntervalSec": 5,
+      "barMetric": "usage",
+      "refreshIntervalSec": 30
+    }
+  }
+}

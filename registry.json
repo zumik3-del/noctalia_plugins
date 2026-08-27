@@ -1,0 +1,14 @@
+{
+  "plugins": [
+    {
+      "id": "screenrec",
+      "name": "ScreenRec",
+      "description": "Screen recording to MP4/WebM/MKV/GIF on Wayland (grim + slurp + ffmpeg) with a bar widget, live status indicator, and folder/fps/format settings.",
+      "version": "1.0.0",
+      "author": "zumik3-del",
+      "tags": ["Bar", "Utility", "Screen Recording"],
+      "official": false,
+      "minNoctaliaVersion": "3.0.0"
+    }
+  ]
+}

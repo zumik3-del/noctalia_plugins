@@ -19,6 +19,9 @@ record, right-click opens plugin settings.
 ## Usage
 
 - **Bar:** left-click the widget to start/stop, right-click to open settings.
+  Starting opens a built-in region selector (a native Quickshell overlay —
+  no `slurp`, renders instantly with no flicker): drag for a region, click
+  for the whole screen, `Esc` to cancel.
 - **Hotkeys** (add to `~/.config/niri/config.kdl`):
 
   ```kdl
@@ -26,7 +29,8 @@ record, right-click opens plugin settings.
   bind: Mod+Shift+X { spawn -- "screenrec" "stop"; }
   ```
 
-  On `start`, `slurp` opens: click a monitor for the whole screen, drag for a region, `Esc` to cancel.
+  The hotkey path falls back to `slurp` for region selection
+  (click a monitor for the whole screen, drag for a region, `Esc` to cancel).
 
 ## Settings (plugin panel)
 

@@ -1,62 +1,53 @@
 # ScreenRec
 
-Плагин для [noctalia](https://noctalia.dev) — запись экрана на Wayland (niri) в
-**MP4 / WebM / MKV / GIF** через `grim` + `slurp` + `ffmpeg`.
+noctalia plugin for screen recording on Wayland (niri) to **MP4 / WebM / MKV / GIF**
+via `grim` + `slurp` + `ffmpeg`.
 
-Виджет в баре показывает статус записи (пульсирующий красный индикатор `REC m:ss`),
-клик — старт/стоп, правый клик — настройки плагина.
+The bar widget shows recording status (pulsing red `REC m:ss`); left-click toggles
+record, right-click opens plugin settings.
 
-## Установка
+## Install
 
-**Через noctalia (рекомендуется):**
+**Via noctalia (recommended):**
 
-1. Settings → Plugins → Sources → добавь репозиторий
-   `https://github.com/zumik3-del/screenrec.git`
-2. Нажми **refresh** в списке доступных плагинов.
-3. Установи **ScreenRec**. noctalia сам заберёт папку `screenrec/` из репозитория;
-   обновления — кнопкой update (тянут новый коммит из этого же репо).
+1. Settings → Plugins → Sources → add repository `https://github.com/zumik3-del/screenrec.git`
+2. Click **refresh** in the available plugins list.
+3. Install **ScreenRec**. Updates pull the latest commit from the same repo.
 
-**Вручную** (альтернатива, без git-репозитория): `./install.sh` — сделает
-симлинки плагина и скрипта и зарегистрирует плагин в `plugins.json`.
+**Manual:** run `./install.sh` to symlink the plugin and script and register it in `plugins.json`.
 
-## Использование
+## Usage
 
-- **Бар:** левый клик по виджету — начать/остановить запись,
-  правый клик — открыть настройки плагина.
-- **Горячие клавиши** (прописываются в `~/.config/niri/config.kdl` вручную):
+- **Bar:** left-click the widget to start/stop, right-click to open settings.
+- **Hotkeys** (add to `~/.config/niri/config.kdl`):
 
   ```kdl
   bind: Mod+Shift+G { spawn -- "screenrec" "start"; }
   bind: Mod+Shift+X { spawn -- "screenrec" "stop"; }
   ```
 
-  `slurp` при старте: клик по монитору — весь экран, перетаскивание — область,
-  `Esc` — отмена.
+  On `start`, `slurp` opens: click a monitor for the whole screen, drag for a region, `Esc` to cancel.
 
-## Настройки (панель плагина)
+## Settings (plugin panel)
 
-- **Папка сохранения** — куда писать видео (по умолчанию `~/Downloads`).
-- **Частота кадров** — по умолчанию 15.
-- **Формат** — `mp4` (H.264), `webm` (VP9), `mkv` (H.264), `gif`.
+- **Output folder** — default `~/Downloads`.
+- **Frame rate** — default 15.
+- **Format** — `mp4` (H.264), `webm` (VP9), `mkv` (H.264), `gif`.
 
-Значения хранятся в настройках плагина noctalia и применяются командой
-`screenrec set`.
-
-## Файлы плагина
+## Files
 
 ```
 screenrec/
-├── manifest.json     # описание плагина
-├── Main.qml          # точка входа
-├── BarWidget.qml     # виджет статуса в баре
-├── Settings.qml      # панель настроек
-├── screenrec         # исполняемый скрипт записи
-└── install.sh        # ручная установка
+├── manifest.json   # plugin manifest
+├── Main.qml        # entry point
+├── BarWidget.qml   # bar status widget
+├── Settings.qml    # settings panel
+├── screenrec       # recorder script
+└── install.sh      # manual install
 ```
 
-Скрипт `screenrec` вызывается виджетом через `pluginApi.pluginDir`, поэтому
-дополнительно класть его в `PATH` не нужно.
+The script is invoked via `pluginApi.pluginDir`, so it does not need to be on `PATH`.
 
-## Зависимости
+## Dependencies
 
-`grim`, `slurp`, `ffmpeg` (с libx264 и libvpx-vp9), `notify-send`.
+`grim`, `slurp`, `ffmpeg` (libx264 + libvpx-vp9), `notify-send`.

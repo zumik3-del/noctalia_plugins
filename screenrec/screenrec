@@ -47,8 +47,7 @@ case "$cmd" in
     date +%s > "$DIR/start"
     mktemp -d > "$DIR/tmp"
     setsid "$0" capture >"$DIR/log" 2>&1 &
-    notify-send "● Recording started" \
-      "Click a monitor = full screen, drag = region. Stop: Mod+Shift+X" 2>/dev/null || true
+    notify-send "Recording started" 2>/dev/null || true
     ;;
 
   capture)

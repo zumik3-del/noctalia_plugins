@@ -140,8 +140,28 @@ case "$cmd" in
       "$icon" $((e / 60)) $((e % 60))
     ;;
 
+  hotkeys)
+    # read-only: show key combos bound to screenrec in the niri config
+    f="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+    [ -f "$f" ] || f="$HOME/.config/niri/config.kdl"
+    if [ ! -f "$f" ]; then
+      echo "NOTFOUND"
+      exit 0
+    fi
+    grep -i 'screenrec' "$f" | grep -vE '^[[:space:]]*//' | while IFS= read -r line; do
+      key="$(printf '%s' "$line" | sed 's/{.*//' \
+            | sed -E 's/^[[:space:]]+//; s/^[[:space:]]*bind:[[:space:]]*//; s/[[:space:]].*//')"
+      act=run
+      case "$line" in
+        *screenrec*start*) act=start ;;
+        *screenrec*stop*)  act=stop ;;
+      esac
+      [ -n "$key" ] && printf '%s %s\n' "$key" "$act"
+    done
+    ;;
+
   *)
-    echo "Использование: screenrec {start|stop|status|set|capture}" >&2
+    echo "Использование: screenrec {start|stop|status|set|capture|hotkeys}" >&2
     exit 1
     ;;
 esac

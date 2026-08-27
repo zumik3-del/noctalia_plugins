@@ -19,6 +19,38 @@ ColumnLayout {
   property string valueFps: String(cfg.fps ?? defaults.fps ?? 15)
   property string valueFormat: cfg.format ?? defaults.format ?? "mp4"
 
+  // read-only display of hotkeys assigned to screenrec in the niri config
+  property string hotkeyInfo: "…"
+
+  function parseHotkeys(text) {
+    var startK = "", stopK = ""
+    var lines = text.trim().split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var p = lines[i].split(" ")
+      if (p[0] === "NOTFOUND") {
+        hotkeyInfo = "Not set — edit niri config"
+        return
+      }
+      if (p.length >= 2) {
+        if (p[1] === "start") startK = p[0]
+        else if (p[1] === "stop") stopK = p[0]
+      }
+    }
+    if (!startK && !stopK)
+      hotkeyInfo = "Not set — edit niri config"
+    else
+      hotkeyInfo = "Start: " + (startK || "—") + "   ·   Stop: " + (stopK || "—")
+  }
+
+  Process {
+    id: hotkeyProc
+    running: true
+    command: [screenrecBin, "hotkeys"]
+    stdout: StdioCollector {
+      onStreamFinished: root.parseHotkeys(this.text)
+    }
+  }
+
   Process { id: setDirProc }
   Process { id: setFpsProc }
   Process { id: setFmtProc }
@@ -125,6 +157,14 @@ ColumnLayout {
   NText {
     Layout.fillWidth: true
     text: "Start: Mod+Shift+G · Stop: Mod+Shift+X\nClick the widget to toggle recording."
+    color: Color.mOnSurfaceVariant
+    wrapMode: Text.Wrap
+    Layout.topMargin: Style.marginM
+  }
+
+  NText {
+    Layout.fillWidth: true
+    text: "Hotkeys (from niri config): " + hotkeyInfo
     color: Color.mOnSurfaceVariant
     wrapMode: Text.Wrap
     Layout.topMargin: Style.marginM

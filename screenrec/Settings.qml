@@ -84,13 +84,6 @@ ColumnLayout {
 
   spacing: Style.marginL
 
-  NText {
-    Layout.fillWidth: true
-    text: "ScreenRec — screen recording to MP4."
-    color: Color.mOnSurface
-    font.weight: Style.fontWeightBold
-  }
-
   NTextInputButton {
     Layout.fillWidth: true
     label: "Output folder"

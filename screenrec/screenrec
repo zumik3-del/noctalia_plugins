@@ -40,8 +40,26 @@ case "$cmd" in
     # no flicker). Fall back to slurp for the hotkey path (no argument).
     region="${2:-}"
     if [ -z "$region" ]; then
-      # slurp -o: click a monitor = full screen, drag = region, Esc = cancel
-      region="$(slurp -o 2>/dev/null)" || exit 1
+      # slurp -o: click a monitor = full screen, drag = region, Esc = cancel.
+      # On niri slurp's overlay does not paint until the first pointer event,
+      # causing a flicker and a blank selection rectangle. If ydotool is
+      # available, nudge the pointer by 1px and back right after slurp maps
+      # its surface to force an immediate repaint. Best-effort; if ydotool is
+      # missing we just use slurp as-is.
+      if command -v ydotool >/dev/null 2>&1; then
+        tmpf="$(mktemp)"
+        slurp -o > "$tmpf" 2>/dev/null &
+        slurpid=$!
+        sleep 0.15
+        ydotool mousemove 1 1 2>/dev/null
+        ydotool mousemove -1 -1 2>/dev/null
+        wait "$slurpid"
+        region="$(cat "$tmpf")"
+        rm -f "$tmpf"
+      else
+        region="$(slurp -o 2>/dev/null)" || exit 1
+      fi
+      [ -z "$region" ] && exit 1
     fi
     echo "$region" > "$DIR/region"
     date +%s > "$DIR/start"

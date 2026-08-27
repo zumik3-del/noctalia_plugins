@@ -55,3 +55,7 @@ The script is invoked via `pluginApi.pluginDir`, so it does not need to be on `P
 ## Dependencies
 
 `grim`, `slurp`, `ffmpeg` (libx264 + libvpx-vp9), `notify-send`.
+
+Optional: `ydotool` — when present, the hotkey path (`Mod+Shift+G`) nudges the
+pointer to force slurp to paint its overlay immediately on niri (no flicker).
+Without it the hotkey path still works, just with slurp's default behavior.

@@ -40,15 +40,32 @@ case "$cmd" in
     # no flicker). Fall back to slurp for the hotkey path (no argument).
     region="${2:-}"
     if [ -z "$region" ]; then
-      # slurp -o: click a monitor = full screen, drag = region, Esc = cancel
-      region="$(slurp -o 2>/dev/null)" || exit 1
+      # slurp -o: click a monitor = full screen, drag = region, Esc = cancel.
+      # On niri slurp's overlay does not paint until the first pointer event,
+      # causing a flicker and a blank selection rectangle. If ydotool is
+      # available, nudge the pointer by 1px and back right after slurp maps
+      # its surface to force an immediate repaint. Best-effort; if ydotool is
+      # missing we just use slurp as-is.
+      if command -v ydotool >/dev/null 2>&1; then
+        tmpf="$(mktemp)"
+        slurp -o > "$tmpf" 2>/dev/null &
+        slurpid=$!
+        sleep 0.15
+        ydotool mousemove 1 1 2>/dev/null
+        ydotool mousemove -1 -1 2>/dev/null
+        wait "$slurpid"
+        region="$(cat "$tmpf")"
+        rm -f "$tmpf"
+      else
+        region="$(slurp -o 2>/dev/null)" || exit 1
+      fi
+      [ -z "$region" ] && exit 1
     fi
     echo "$region" > "$DIR/region"
     date +%s > "$DIR/start"
     mktemp -d > "$DIR/tmp"
     setsid "$0" capture >"$DIR/log" 2>&1 &
-    notify-send "● Recording started" \
-      "Click a monitor = full screen, drag = region. Stop: Mod+Shift+X" 2>/dev/null || true
+    notify-send "Recording started" 2>/dev/null || true
     ;;
 
   capture)
@@ -141,8 +158,28 @@ case "$cmd" in
       "$icon" $((e / 60)) $((e % 60))
     ;;
 
+  hotkeys)
+    # read-only: show key combos bound to screenrec in the niri config
+    f="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+    [ -f "$f" ] || f="$HOME/.config/niri/config.kdl"
+    if [ ! -f "$f" ]; then
+      echo "NOTFOUND"
+      exit 0
+    fi
+    grep -i 'screenrec' "$f" | grep -vE '^[[:space:]]*//' | while IFS= read -r line; do
+      key="$(printf '%s' "$line" | sed 's/{.*//' \
+            | sed -E 's/^[[:space:]]+//; s/^[[:space:]]*bind:[[:space:]]*//; s/[[:space:]].*//')"
+      act=run
+      case "$line" in
+        *screenrec*start*) act=start ;;
+        *screenrec*stop*)  act=stop ;;
+      esac
+      [ -n "$key" ] && printf '%s %s\n' "$key" "$act"
+    done
+    ;;
+
   *)
-    echo "Использование: screenrec {start|stop|status|set|capture}" >&2
+    echo "Использование: screenrec {start|stop|status|set|capture|hotkeys}" >&2
     exit 1
     ;;
 esac

@@ -156,14 +156,6 @@ ColumnLayout {
 
   NText {
     Layout.fillWidth: true
-    text: "Start: Mod+Shift+G · Stop: Mod+Shift+X\nClick the widget to toggle recording."
-    color: Color.mOnSurfaceVariant
-    wrapMode: Text.Wrap
-    Layout.topMargin: Style.marginM
-  }
-
-  NText {
-    Layout.fillWidth: true
     text: "Hotkeys (from niri config): " + hotkeyInfo
     color: Color.mOnSurfaceVariant
     wrapMode: Text.Wrap

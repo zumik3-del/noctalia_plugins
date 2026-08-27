@@ -84,13 +84,6 @@ ColumnLayout {
 
   spacing: Style.marginL
 
-  NText {
-    Layout.fillWidth: true
-    text: "ScreenRec — screen recording to MP4."
-    color: Color.mOnSurface
-    font.weight: Style.fontWeightBold
-  }
-
   NTextInputButton {
     Layout.fillWidth: true
     label: "Output folder"
@@ -152,14 +145,6 @@ ColumnLayout {
       valueFormat = key
       commitFormat()
     }
-  }
-
-  NText {
-    Layout.fillWidth: true
-    text: "Start: Mod+Shift+G · Stop: Mod+Shift+X\nClick the widget to toggle recording."
-    color: Color.mOnSurfaceVariant
-    wrapMode: Text.Wrap
-    Layout.topMargin: Style.marginM
   }
 
   NText {

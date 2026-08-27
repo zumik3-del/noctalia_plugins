@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# screenrec — запись области/экрана в MP4 на Wayland (niri + grim/slurp/ffmpeg)
+#
+# Подкоманды:
+#   screenrec start    выбрать область (slurp) и начать запись
+#   screenrec stop     остановить запись
+#   screenrec status   вывод JSON для виджета бара (иконка + текст)
+#   screenrec capture  внутренний: фоновый захват кадров и сборка MP4
+#
+# Параметры окружения:
+#   SCREENREC_OUT_DIR  куда сохранять видео (по умолчанию ~/Downloads)
+#   SCREENREC_FPS      частота кадров (по умолчанию 15)
+#
+set -uo pipefail
+
+XDG="${XDG_RUNTIME_DIR:-/tmp}"
+DIR="$XDG/screenrec"
+# Пользовательский конфиг (задаётся из настроек плагина noctalia)
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
+[ -f "$CONF" ] && . "$CONF"
+OUT_DIR="${SCREENREC_OUT_DIR:-~/Downloads}"
+FPS="${SCREENREC_FPS:-15}"
+FMT="${SCREENREC_FORMAT:-mp4}"
+# Раскрываем ~ в начале пути (универсально для любого пользователя/машины)
+case "$OUT_DIR" in
+  "~"|"~/"*) OUT_DIR="$HOME${OUT_DIR#\~}" ;;
+esac
+STEP="$(awk "BEGIN{printf \"%.4f\", 1/$FPS}")"
+
+cmd="${1:-}"
+
+case "$cmd" in
+  start)
+    mkdir -p "$DIR"
+    if pgrep -f "screenrec capture" >/dev/null 2>&1; then
+      notify-send "ScreenRec" "Already recording" 2>/dev/null || true
+      exit 0
+    fi
+    # slurp -o: click a monitor = full screen, drag = region, Esc = cancel
+    region="$(slurp -o)" || exit 1
+    echo "$region" > "$DIR/region"
+    date +%s > "$DIR/start"
+    mktemp -d > "$DIR/tmp"
+    setsid "$0" capture >"$DIR/log" 2>&1 &
+    notify-send "● Recording started" \
+      "Click a monitor = full screen, drag = region. Stop: Mod+Shift+X" 2>/dev/null || true
+    ;;
+
+  capture)
+    TMP="$(cat "$DIR/tmp")"
+    region="$(cat "$DIR/region")"
+    i=0
+    while [ -f "$DIR/start" ]; do
+      i=$((i + 1))
+      grim -g "$region" "$TMP/f$(printf %05d "$i").png" 2>/dev/null || true
+      sleep "$STEP"
+    done
+    shopt -s nullglob
+    files=("$TMP"/f*.png)
+    if [ "${#files[@]}" -gt 0 ]; then
+      mkdir -p "$OUT_DIR"
+      STAMP="$(date +%Y%m%d-%H%M%S)"
+      case "$FMT" in
+        webm)
+          OUT="$OUT_DIR/screenrec-$STAMP.webm"
+          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+            -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 "$OUT"
+          ;;
+        mkv)
+          OUT="$OUT_DIR/screenrec-$STAMP.mkv"
+          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
+            -c:v libx264 -crf 18 -preset veryfast "$OUT"
+          ;;
+        gif)
+          OUT="$OUT_DIR/screenrec-$STAMP.gif"
+          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,palettegen" "$TMP/palette.png"
+          ffmpeg -y -hide_banner -loglevel error -i "$TMP/f%05d.png" -i "$TMP/palette.png" \
+            -lavfi "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,paletteuse" "$OUT"
+          rm -f "$TMP/palette.png"
+          ;;
+        *)
+          OUT="$OUT_DIR/screenrec-$STAMP.mp4"
+          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
+            -c:v libx264 -crf 18 -preset veryfast "$OUT"
+          ;;
+      esac
+      notify-send "Video saved" "$(basename "$OUT")" 2>/dev/null || true
+    fi
+    rm -rf "$TMP" "$DIR/start" "$DIR/region" "$DIR/tmp" 2>/dev/null || true
+    ;;
+
+  stop)
+    rm -f "$DIR/start"
+    ;;
+
+  set)
+    CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
+    mkdir -p "$(dirname "$CONF")"
+    case "${2:-}" in
+      out-dir)
+        [ -f "$CONF" ] && . "$CONF"
+        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "$3" "${SCREENREC_FPS:-15}" "${SCREENREC_FORMAT:-mp4}" > "$CONF"
+        ;;
+      fps)
+        [ -f "$CONF" ] && . "$CONF"
+        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "${SCREENREC_OUT_DIR:-~/Downloads}" "$3" "${SCREENREC_FORMAT:-mp4}" > "$CONF"
+        ;;
+      format)
+        [ -f "$CONF" ] && . "$CONF"
+        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "${SCREENREC_OUT_DIR:-~/Downloads}" "${SCREENREC_FPS:-15}" "$3" > "$CONF"
+        ;;
+      *)
+        echo "Usage: screenrec set {out-dir|fps|format} VALUE" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+
+  status)
+    f="$DIR/start"
+    if [ ! -f "$f" ]; then
+      # простой: квадратный стоп-значок в цвете темы, без надписи
+      printf '{"icon":"square-filled","iconColor":"none","textColor":"none","text":""}'
+      exit 0
+    fi
+    s="$(cat "$f")"
+    now="$(date +%s)"
+    e=$((now - s))
+    # пульс: полный/контурный кружок по очереди каждую секунду
+    if [ $((now % 2)) -eq 0 ]; then icon="circle-filled"; else icon="circle"; fi
+    printf '{"icon":"%s","iconColor":"error","textColor":"error","text":"REC %d:%02d"}' \
+      "$icon" $((e / 60)) $((e % 60))
+    ;;
+
+  *)
+    echo "Использование: screenrec {start|stop|status|set|capture}" >&2
+    exit 1
+    ;;
+esac

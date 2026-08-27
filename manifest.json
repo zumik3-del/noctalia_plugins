@@ -1,0 +1,25 @@
+{
+  "id": "screenrec",
+  "name": "ScreenRec",
+  "version": "1.0.0",
+  "minNoctaliaVersion": "3.0.0",
+  "author": "zumik",
+  "license": "MIT",
+  "description": "Screen recording to MP4 on niri (grim/slurp/ffmpeg).",
+  "tags": ["Bar", "Utility"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "outDir": "~/Downloads",
+      "fps": 15,
+      "format": "mp4"
+    }
+  }
+}

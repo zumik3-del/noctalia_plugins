@@ -106,10 +106,14 @@ Item {
     }
   }
 
-  RegionSelector {
-    id: selector
-    targetScreen: root.screen
-    bin: screenrecBin
+  Loader {
+    id: selectorLoader
+    source: "RegionSelector.qml"
+    active: true
+    onLoaded: {
+      item.targetScreen = root.screen
+      item.bin = screenrecBin
+    }
   }
 
   MouseArea {
@@ -126,7 +130,9 @@ Item {
         } else {
           // open our own QML selector instead of slurp (no flicker,
           // overlay paints immediately)
-          selector.visible = true
+          selectorLoader.item.targetScreen = root.screen
+          selectorLoader.item.bin = screenrecBin
+          selectorLoader.item.visible = true
         }
       } else if (m.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)

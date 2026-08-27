@@ -10,7 +10,7 @@ record, right-click opens plugin settings.
 
 **Via noctalia (recommended):**
 
-1. Settings → Plugins → Sources → add repository `https://github.com/zumik3-del/screenrec.git`
+1. Settings → Plugins → Sources → add repository `https://github.com/zumik3-del/screenrec`
 2. Click **refresh** in the available plugins list.
 3. Install **ScreenRec**. Updates pull the latest commit from the same repo.
 

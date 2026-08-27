@@ -106,6 +106,12 @@ Item {
     }
   }
 
+  RegionSelector {
+    id: selector
+    targetScreen: root.screen
+    bin: screenrecBin
+  }
+
   MouseArea {
     id: mouse
     anchors.fill: parent
@@ -115,7 +121,13 @@ Item {
 
     onClicked: function (m) {
       if (m.button === Qt.LeftButton) {
-        root.run(root.recording ? "stop" : "start")
+        if (root.recording) {
+          root.run("stop")
+        } else {
+          // open our own QML selector instead of slurp (no flicker,
+          // overlay paints immediately)
+          selector.visible = true
+        }
       } else if (m.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)
       }

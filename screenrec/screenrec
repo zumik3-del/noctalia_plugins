@@ -1,31 +1,36 @@
 #!/usr/bin/env bash
-# screenrec — запись области/экрана в MP4 на Wayland (niri + grim/slurp/ffmpeg)
+# screenrec - record a region/screen to MP4 on Wayland (niri + grim/slurp/ffmpeg)
 #
-# Подкоманды:
-#   screenrec start    выбрать область (slurp) и начать запись
-#   screenrec stop     остановить запись
-#   screenrec status   вывод JSON для виджета бара (иконка + текст)
-#   screenrec capture  внутренний: фоновый захват кадров и сборка MP4
+# Subcommands:
+#   screenrec start    pick a region (slurp) and start recording
+#   screenrec stop     stop recording
+#   screenrec status   print JSON for the bar widget (icon + text)
+#   screenrec capture  internal: background frame capture and MP4 assembly
 #
-# Параметры окружения:
-#   SCREENREC_OUT_DIR  куда сохранять видео (по умолчанию ~/Downloads)
-#   SCREENREC_FPS      частота кадров (по умолчанию 15)
+# Environment:
+#   SCREENREC_OUT_DIR  where to save the video (default ~/Downloads)
+#   SCREENREC_FPS      frame rate (default 15)
 #
 set -uo pipefail
 
 XDG="${XDG_RUNTIME_DIR:-/tmp}"
 DIR="$XDG/screenrec"
-# Пользовательский конфиг (задаётся из настроек плагина noctalia)
+# User config (set from the noctalia plugin settings)
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
 [ -f "$CONF" ] && . "$CONF"
 OUT_DIR="${SCREENREC_OUT_DIR:-~/Downloads}"
 FPS="${SCREENREC_FPS:-15}"
 FMT="${SCREENREC_FORMAT:-mp4}"
-# Раскрываем ~ в начале пути (универсально для любого пользователя/машины)
+# Expand a leading ~ (works for any user/host)
 case "$OUT_DIR" in
   "~"|"~/"*) OUT_DIR="$HOME${OUT_DIR#\~}" ;;
 esac
 STEP="$(awk "BEGIN{printf \"%.4f\", 1/$FPS}")"
+
+# Notify that the video was saved.
+notify_saved() {
+  notify-send "Video saved" "$(basename "$1")" 2>/dev/null || true
+}
 
 cmd="${1:-}"
 
@@ -36,8 +41,9 @@ case "$cmd" in
       notify-send "ScreenRec" "Already recording" 2>/dev/null || true
       exit 0
     fi
-    # Region may be supplied by the QML selector as "WxH+X+Y" (no slurp,
-    # no flicker). Fall back to slurp for the hotkey path (no argument).
+    # Region is selected with slurp. An optional geometry argument ("WxH+X+Y")
+    # skips slurp (used by external callers). Both the widget and hotkey paths
+    # rely on slurp.
     region="${2:-}"
     if [ -z "$region" ]; then
       # slurp -o: click a monitor = full screen, drag = region, Esc = cancel.
@@ -47,6 +53,9 @@ case "$cmd" in
       # its surface to force an immediate repaint. Best-effort; if ydotool is
       # missing we just use slurp as-is.
       if command -v ydotool >/dev/null 2>&1; then
+        # ydotool needs its daemon; start it if not already running.
+        pgrep -x ydotoold >/dev/null 2>&1 || ydotoold >/dev/null 2>&1 &
+        sleep 0.2
         tmpf="$(mktemp)"
         slurp -o > "$tmpf" 2>/dev/null &
         slurpid=$!
@@ -110,7 +119,7 @@ case "$cmd" in
             -c:v libx264 -crf 18 -preset veryfast "$OUT"
           ;;
       esac
-      notify-send "Video saved" "$(basename "$OUT")" 2>/dev/null || true
+      notify_saved "$OUT"
     fi
     rm -rf "$TMP" "$DIR/start" "$DIR/region" "$DIR/tmp" 2>/dev/null || true
     ;;
@@ -145,17 +154,16 @@ case "$cmd" in
   status)
     f="$DIR/start"
     if [ ! -f "$f" ]; then
-      # простой: квадратный стоп-значок в цвете темы, без надписи
-      printf '{"icon":"square-filled","iconColor":"none","textColor":"none","text":""}'
+      # idle: camera icon in the theme color, no label
+      printf '{"icon":"camera-video","iconColor":"none","textColor":"none","text":""}'
       exit 0
     fi
     s="$(cat "$f")"
     now="$(date +%s)"
     e=$((now - s))
-    # пульс: полный/контурный кружок по очереди каждую секунду
-    if [ $((now % 2)) -eq 0 ]; then icon="circle-filled"; else icon="circle"; fi
-    printf '{"icon":"%s","iconColor":"error","textColor":"error","text":"REC %d:%02d"}' \
-      "$icon" $((e / 60)) $((e % 60))
+    # while recording, same camera icon but red (via iconColor)
+    printf '{"icon":"camera-video","iconColor":"error","textColor":"error","text":"REC %d:%02d"}' \
+      "$((e / 60))" "$((e % 60))"
     ;;
 
   hotkeys)
@@ -179,7 +187,7 @@ case "$cmd" in
     ;;
 
   *)
-    echo "Использование: screenrec {start|stop|status|set|capture|hotkeys}" >&2
+    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys}" >&2
     exit 1
     ;;
 esac

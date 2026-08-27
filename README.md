@@ -19,9 +19,10 @@ record, right-click opens plugin settings.
 ## Usage
 
 - **Bar:** left-click the widget to start/stop, right-click to open settings.
-  Starting opens a built-in region selector (a native Quickshell overlay —
-  no `slurp`, renders instantly with no flicker): drag for a region, click
-  for the whole screen, `Esc` to cancel.
+  Starting runs `screenrec start`, which opens `slurp` for region selection
+  (click a monitor for the whole screen, drag for a region, `Esc` to cancel).
+  On niri, a `ydotool` nudge forces slurp's overlay to paint immediately,
+  avoiding the flicker.
 - **Hotkeys** (add to `~/.config/niri/config.kdl`):
 
   ```kdl
@@ -29,8 +30,8 @@ record, right-click opens plugin settings.
   bind: Mod+Shift+X { spawn -- "screenrec" "stop"; }
   ```
 
-  The hotkey path falls back to `slurp` for region selection
-  (click a monitor for the whole screen, drag for a region, `Esc` to cancel).
+  The hotkey path also uses `slurp` for region selection (same `ydotool`
+  nudge applies).
 
 ## Settings (plugin panel)
 
@@ -56,6 +57,9 @@ The script is invoked via `pluginApi.pluginDir`, so it does not need to be on `P
 
 `grim`, `slurp`, `ffmpeg` (libx264 + libvpx-vp9), `notify-send`.
 
-Optional: `ydotool` — when present, the hotkey path (`Mod+Shift+G`) nudges the
-pointer to force slurp to paint its overlay immediately on niri (no flicker).
-Without it the hotkey path still works, just with slurp's default behavior.
+Optional but recommended: `ydotool` — when present, both the widget and the
+hotkey path nudge the pointer (1px out and back) right after `slurp` maps its
+surface, forcing an immediate repaint on niri and removing the start flicker.
+Without it, selection still works but shows a brief flicker until you move the
+mouse. Requires `ydotoold` to be running and able to access `/dev/uinput`
+(e.g. be in the `input` group, or start `ydotoold` as a user service).

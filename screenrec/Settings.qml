@@ -10,7 +10,7 @@ ColumnLayout {
 
   property var pluginApi: null
 
-  readonly property string screenrecBin: "screenrec"
+  readonly property string screenrecBin: (pluginApi ? pluginApi.pluginDir : "") + "/screenrec"
 
   property var cfg: pluginApi?.pluginSettings || ({})
   property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})

@@ -24,7 +24,7 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  readonly property string screenrecBin: "screenrec"
+  readonly property string screenrecBin: (pluginApi ? pluginApi.pluginDir : "") + "/screenrec"
 
   property string _icon: "square-filled"
   property string _text: ""

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Установщик плагина ScreenRec для noctalia.
+# Установщик плагина ScreenRec для noctalia (ручной режим, альтернатива
+# установке из git-репозитория через UI noctalia).
 # Делает симлинки:
-#   ~/.config/noctalia/plugins/screenrec -> <repo>
-#   ~/.local/bin/screenrec             -> <repo>/screenrec
-# и регистрирует плагин в plugins.json.
+#   ~/.config/noctalia/plugins/screenrec -> <repo>/screenrec
+#   ~/.local/bin/screenrec             -> <repo>/screenrec/screenrec
+# и регистрирует плагин в plugins.json (sourceUrl = GitHub).
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 mkdir -p ~/.config/noctalia/plugins
-ln -sfn "$REPO" ~/.config/noctalia/plugins/screenrec
+ln -sfn "$REPO/screenrec" ~/.config/noctalia/plugins/screenrec
 
 mkdir -p ~/.local/bin
-ln -sfn "$REPO/screenrec" ~/.local/bin/screenrec
+ln -sfn "$REPO/screenrec/screenrec" ~/.local/bin/screenrec
 
 python3 - "$REPO" <<'PY'
 import json, os, sys

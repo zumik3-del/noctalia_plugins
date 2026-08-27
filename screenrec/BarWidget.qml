@@ -26,7 +26,7 @@ Item {
 
   readonly property string screenrecBin: (pluginApi ? pluginApi.pluginDir : "") + "/screenrec"
 
-  property string _icon: "square-filled"
+  property string _icon: "camera-video"
   property string _text: ""
   readonly property bool recording: _text !== ""
 
@@ -43,7 +43,7 @@ Item {
   function parseOutput(text) {
     try {
       var p = JSON.parse(text.trim())
-      _icon = p.icon || "square-filled"
+      _icon = p.icon || "camera-video"
       _text = p.text || ""
     } catch (e) { }
   }
@@ -106,16 +106,6 @@ Item {
     }
   }
 
-  Loader {
-    id: selectorLoader
-    source: "RegionSelector.qml"
-    active: true
-    onLoaded: {
-      item.targetScreen = root.screen
-      item.bin = screenrecBin
-    }
-  }
-
   MouseArea {
     id: mouse
     anchors.fill: parent
@@ -128,11 +118,10 @@ Item {
         if (root.recording) {
           root.run("stop")
         } else {
-          // open our own QML selector instead of slurp (no flicker,
-          // overlay paints immediately)
-          selectorLoader.item.targetScreen = root.screen
-          selectorLoader.item.bin = screenrecBin
-          selectorLoader.item.visible = true
+          // start recording; the script falls back to slurp for region
+          // selection (with a ydotool nudge to force an immediate repaint
+          // on niri, avoiding the flicker)
+          root.run("start")
         }
       } else if (m.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)

@@ -5,7 +5,7 @@
   "minNoctaliaVersion": "3.0.0",
   "author": "zumik3-del",
   "license": "MIT",
-  "description": "Wayland screen recorder (grim + slurp + ffmpeg) with a bar widget.",
+  "description": "Simple screen recorder for Wayland.",
   "tags": ["Bar", "Utility", "Screen Recording"],
   "entryPoints": {
     "main": "Main.qml",

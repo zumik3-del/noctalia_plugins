@@ -3,7 +3,7 @@
     {
       "id": "screenrec",
       "name": "ScreenRec",
-      "description": "Wayland screen recorder (grim + slurp + ffmpeg) with a bar widget.",
+      "description": "Simple screen recorder for Wayland.",
       "version": "1.3.2",
       "author": "zumik3-del",
       "tags": ["Bar", "Utility", "Screen Recording"],

@@ -30,8 +30,6 @@
           "cookie": ""
         }
       },
-      "barDisplayMode": "active",
-      "barCycleIntervalSec": 5,
       "barLimit": "5h",
       "refreshIntervalSec": 1800
     }

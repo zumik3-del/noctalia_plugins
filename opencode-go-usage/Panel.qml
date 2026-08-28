@@ -20,6 +20,14 @@ Item {
         return (Number.isInteger(r) ? r.toString() : r.toFixed(1)) + "%";
     }
 
+    function limitColor(fraction) {
+        if (fraction >= 0.9)
+            return Color.mError;
+        if (fraction >= 0.7)
+            return root.usageWarnColor;
+        return Color.mPrimary;
+    }
+
     readonly property var geometryPlaceholder: panelContainer
     readonly property bool allowAttach: true
     property real contentPreferredWidth: 400 * Style.uiScaleRatio
@@ -61,14 +69,8 @@ Item {
                 Layout.fillWidth: true
                 spacing: Style.marginM
 
-                NIcon {
-                    icon: root.selectedProvider?.providerIcon ?? "ai"
-                    pointSize: Style.fontSizeXXXL
-                    color: Color.mPrimary
-                }
-
                 NText {
-                    text: (root.selectedProvider?.providerName ?? "") + " Usage"
+                    text: "Usage limits"
                     pointSize: Style.fontSizeXL
                     font.weight: Style.fontWeightBold
                     color: Color.mOnSurface
@@ -97,13 +99,6 @@ Item {
             }
 
             Rectangle {
-                visible: !!root.selectedProvider
-                Layout.fillWidth: true
-                height: 1
-                color: Color.mOutline
-            }
-
-            Rectangle {
                 visible: !!root.selectedProvider && (root.selectedProvider?.rateLimitPercent ?? -1) < 0 && (root.selectedProvider?.usageStatusText ?? "") !== ""
                 Layout.fillWidth: true
                 color: Qt.alpha(Color.mError, 0.12)
@@ -129,32 +124,26 @@ Item {
                 }
             }
 
-            Rectangle {
+            ColumnLayout {
+                id: limitsColumn
                 visible: (root.selectedProvider?.rateLimitPercent ?? -1) >= 0
                 Layout.fillWidth: true
-                color: root.sectionBackgroundColor
-                radius: Style.radiusS
-                implicitHeight: rateLimitColumn.implicitHeight + Style.marginXL
+                spacing: Style.marginM
 
-                ColumnLayout {
-                    id: rateLimitColumn
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                        margins: Style.marginL
-                    }
-                    spacing: Style.marginM
-
-                    NText {
-                        text: "Usage Limits"
-                        pointSize: Style.fontSizeL
-                        font.weight: Style.fontWeightSemiBold
-                        color: Color.mPrimary
-                    }
+                Rectangle {
+                    Layout.fillWidth: true
+                    color: root.sectionBackgroundColor
+                    radius: Style.radiusS
+                    implicitHeight: card5h.implicitHeight + Style.marginXL
 
                     ColumnLayout {
-                        Layout.fillWidth: true
+                        id: card5h
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            margins: Style.marginL
+                        }
                         spacing: Style.marginXS
 
                         RowLayout {
@@ -176,14 +165,7 @@ Item {
                                 }
                                 pointSize: Style.fontSizeS
                                 font.weight: Style.fontWeightBold
-                                color: {
-                                    const u = root.selectedProvider?.rateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mOnSurface;
-                                }
+                                color: root.limitColor(root.selectedProvider?.rateLimitPercent ?? 0)
                             }
                         }
 
@@ -200,14 +182,7 @@ Item {
                                     bottom: parent.bottom
                                 }
                                 radius: Style.radiusXXS
-                                color: {
-                                    const u = root.selectedProvider?.rateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mPrimary;
-                                }
+                                color: root.limitColor(root.selectedProvider?.rateLimitPercent ?? 0)
                                 width: parent.width * Math.min(1.0, Math.max(0, root.selectedProvider?.rateLimitPercent ?? 0))
 
                                 Behavior on width {
@@ -226,10 +201,22 @@ Item {
                             color: Color.mOnSurfaceVariant
                         }
                     }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    color: root.sectionBackgroundColor
+                    radius: Style.radiusS
+                    implicitHeight: cardWeek.implicitHeight + Style.marginXL
 
                     ColumnLayout {
-                        visible: (root.selectedProvider?.secondaryRateLimitPercent ?? -1) >= 0
-                        Layout.fillWidth: true
+                        id: cardWeek
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            margins: Style.marginL
+                        }
                         spacing: Style.marginXS
 
                         RowLayout {
@@ -251,14 +238,7 @@ Item {
                                 }
                                 pointSize: Style.fontSizeS
                                 font.weight: Style.fontWeightBold
-                                color: {
-                                    const u = root.selectedProvider?.secondaryRateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mOnSurface;
-                                }
+                                color: root.limitColor(root.selectedProvider?.secondaryRateLimitPercent ?? 0)
                             }
                         }
 
@@ -275,14 +255,7 @@ Item {
                                     bottom: parent.bottom
                                 }
                                 radius: Style.radiusXXS
-                                color: {
-                                    const u = root.selectedProvider?.secondaryRateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mPrimary;
-                                }
+                                color: root.limitColor(root.selectedProvider?.secondaryRateLimitPercent ?? 0)
                                 width: parent.width * Math.min(1.0, Math.max(0, root.selectedProvider?.secondaryRateLimitPercent ?? 0))
 
                                 Behavior on width {
@@ -301,10 +274,22 @@ Item {
                             color: Color.mOnSurfaceVariant
                         }
                     }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    color: root.sectionBackgroundColor
+                    radius: Style.radiusS
+                    implicitHeight: cardMonth.implicitHeight + Style.marginXL
 
                     ColumnLayout {
-                        visible: (root.selectedProvider?.monthlyRateLimitPercent ?? -1) >= 0
-                        Layout.fillWidth: true
+                        id: cardMonth
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            margins: Style.marginL
+                        }
                         spacing: Style.marginXS
 
                         RowLayout {
@@ -326,14 +311,7 @@ Item {
                                 }
                                 pointSize: Style.fontSizeS
                                 font.weight: Style.fontWeightBold
-                                color: {
-                                    const u = root.selectedProvider?.monthlyRateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mOnSurface;
-                                }
+                                color: root.limitColor(root.selectedProvider?.monthlyRateLimitPercent ?? 0)
                             }
                         }
 
@@ -350,14 +328,7 @@ Item {
                                     bottom: parent.bottom
                                 }
                                 radius: Style.radiusXXS
-                                color: {
-                                    const u = root.selectedProvider?.monthlyRateLimitPercent ?? 0;
-                                    if (u >= 0.9)
-                                        return Color.mError;
-                                    if (u >= 0.7)
-                                        return root.usageWarnColor;
-                                    return Color.mPrimary;
-                                }
+                                color: root.limitColor(root.selectedProvider?.monthlyRateLimitPercent ?? 0)
                                 width: parent.width * Math.min(1.0, Math.max(0, root.selectedProvider?.monthlyRateLimitPercent ?? 0))
 
                                 Behavior on width {

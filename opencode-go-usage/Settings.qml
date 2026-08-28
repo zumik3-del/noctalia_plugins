@@ -14,17 +14,10 @@ ColumnLayout {
     function saveSettings() {
         pluginApi.pluginSettings = JSON.parse(JSON.stringify(root.editSettings));
         pluginApi.saveSettings();
+        pluginApi?.mainInstance?.secureSettingsFile?.();
     }
 
     spacing: Style.marginL
-
-    NText {
-        text: "Opencode Go Usage Settings"
-        pointSize: Style.fontSizeXL
-        font.weight: Style.fontWeightBold
-        color: Color.mOnSurface
-        Layout.fillWidth: true
-    }
 
     Rectangle {
         Layout.fillWidth: true
@@ -54,64 +47,6 @@ ColumnLayout {
                 spacing: Style.marginXS
 
                 NText {
-                    text: "Bar display mode"
-                    pointSize: Style.fontSizeM
-                    font.weight: Style.fontWeightSemiBold
-                    color: Color.mOnSurface
-                }
-                NText {
-                    text: "Show active provider or cycle between enabled providers"
-                    pointSize: Style.fontSizeXS
-                    color: Color.mOnSurfaceVariant
-                }
-
-                NComboBox {
-                    Layout.fillWidth: true
-                    model: [
-                        {
-                            key: "active",
-                            name: "Active provider"
-                        },
-                        {
-                            key: "cycle",
-                            name: "Cycle providers"
-                        }
-                    ]
-                    currentKey: editSettings?.barDisplayMode ?? "active"
-                    onSelected: key => {
-                        editSettings.barDisplayMode = key;
-                    }
-                }
-            }
-
-            ColumnLayout {
-                visible: (editSettings?.barDisplayMode ?? "active") === "cycle"
-                Layout.fillWidth: true
-                spacing: Style.marginXS
-
-                NText {
-                    text: "Cycle interval (seconds)"
-                    pointSize: Style.fontSizeM
-                    font.weight: Style.fontWeightSemiBold
-                    color: Color.mOnSurface
-                }
-
-                NSpinBox {
-                    from: 2
-                    to: 60
-                    value: editSettings?.barCycleIntervalSec ?? 5
-                    stepSize: 1
-                    onValueChanged: {
-                        editSettings.barCycleIntervalSec = value;
-                    }
-                }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Style.marginXS
-
-                NText {
                     text: "Refresh interval"
                     pointSize: Style.fontSizeM
                     font.weight: Style.fontWeightSemiBold
@@ -126,13 +61,14 @@ ColumnLayout {
                 NComboBox {
                     Layout.fillWidth: true
                     model: [
-                        { key: 1800, name: "30 minutes" },
-                        { key: 3600, name: "1 hour" },
-                        { key: 10800, name: "3 hours" }
+                        { key: "1800", name: "30 minutes" },
+                        { key: "3600", name: "1 hour" },
+                        { key: "10800", name: "3 hours" }
                     ]
-                    currentKey: Number(editSettings?.refreshIntervalSec ?? 1800)
+                    currentKey: String(editSettings?.refreshIntervalSec ?? 1800)
                     onSelected: key => {
                         editSettings.refreshIntervalSec = Number(key);
+                        root.saveSettings();
                     }
                 }
             }
@@ -163,6 +99,7 @@ ColumnLayout {
                     currentKey: editSettings?.barLimit ?? "5h"
                     onSelected: key => {
                         editSettings.barLimit = key;
+                        root.saveSettings();
                     }
                 }
             }
@@ -207,7 +144,7 @@ ColumnLayout {
                             if (!editSettings.providers.opencodeGo)
                                 editSettings.providers.opencodeGo = {};
                             editSettings.providers.opencodeGo.enabled = value;
-                            editSettingsChanged();
+                            root.saveSettings();
                         }
                     }
                     NText {
@@ -236,6 +173,7 @@ ColumnLayout {
                         if (!editSettings.providers.opencodeGo)
                             editSettings.providers.opencodeGo = {};
                         editSettings.providers.opencodeGo.workspaceId = text;
+                        root.saveSettings();
                     }
                 }
 
@@ -252,6 +190,7 @@ ColumnLayout {
                         if (!editSettings.providers.opencodeGo)
                             editSettings.providers.opencodeGo = {};
                         editSettings.providers.opencodeGo.cookie = text;
+                        root.saveSettings();
                     }
                 }
             }

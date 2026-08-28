@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "providers" as Providers
 
 Item {
@@ -24,36 +25,16 @@ Item {
         return result;
     }
 
-    property int activeIndex: 0
-    property var activeProvider: enabledProviders.length > 0 ? enabledProviders[Math.min(activeIndex, enabledProviders.length - 1)] : null
+    property var activeProvider: enabledProviders.length > 0 ? enabledProviders[0] : null
 
-    property string barDisplayMode: pluginSettings?.barDisplayMode ?? "active"
-    property int barCycleIntervalSec: pluginSettings?.barCycleIntervalSec ?? 5
     property string barLimit: pluginSettings?.barLimit ?? "5h"
     property int refreshIntervalSec: pluginSettings?.refreshIntervalSec ?? 1800
-
-    Timer {
-        interval: root.barCycleIntervalSec * 1000
-        running: root.barDisplayMode === "cycle" && root.enabledProviders.length > 1
-        repeat: true
-        onTriggered: {
-            root.activeIndex = (root.activeIndex + 1) % root.enabledProviders.length;
-        }
-    }
 
     Timer {
         interval: root.refreshIntervalSec * 1000
         running: true
         repeat: true
         onTriggered: root.refreshAll()
-    }
-
-    onEnabledProvidersChanged: {
-        if (enabledProviders.length === 0) {
-            activeIndex = 0;
-        } else if (activeIndex >= enabledProviders.length) {
-            activeIndex = 0;
-        }
     }
 
     function providerEnabled(id) {
@@ -70,4 +51,22 @@ Item {
                 p.refresh();
         }
     }
+
+    function secureSettingsFile() {
+        if (!pluginApi?.pluginDir)
+            return;
+        secureProcess.command = ["chmod", "600", pluginApi.pluginDir + "/settings.json"];
+        secureProcess.running = true;
+    }
+
+    Process {
+        id: secureProcess
+        running: false
+        onExited: (code, status) => {
+            if (code !== 0)
+                Logger.e("opencode-go-usage", "failed to secure settings.json (exit " + code + ")");
+        }
+    }
+
+    Component.onCompleted: root.secureSettingsFile()
 }

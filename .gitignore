@@ -1,6 +1,12 @@
-# Local-only agent instructions (not committed)
+# Agent instructions (local-only, not committed)
 AGENTS.md
 
-# Per-plugin local ignored state
-screenrec/settings.json
-opencode-go-usage/settings.json
+# Plugin local settings (user state, not committed)
+settings.json
+
+# Build / cache / OS junk
+*.qmlc
+*.swp
+*.log
+.DS_Store
+Thumbs.db

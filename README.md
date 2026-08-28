@@ -4,9 +4,11 @@ This repo hosts two noctalia plugins, installed together from the same repositor
 
 ## Install (both)
 
-1. noctalia → Settings → Plugins → Sources → add `https://github.com/zumik3-del/screenrec`
+1. noctalia → Settings → Plugins → Sources → add `https://github.com/zumik3-del/noctalia_plugins`
 2. Refresh, then install **ScreenRec** and/or **Opencode Go Usage**.
-3. Manual: copy/symlink a plugin folder (`screenrec/`, `opencode-go-usage/`) into `~/.config/noctalia/plugins/`.
+
+Both plugins are installed together from this single repository source; a plugin
+folder is never copied or symlinked standalone.
 
 ---
 

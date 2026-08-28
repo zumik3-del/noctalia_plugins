@@ -19,6 +19,9 @@ Item {
     property real secondaryRateLimitPercent: -1
     property string secondaryRateLimitLabel: ""
     property string secondaryRateLimitResetAt: ""
+    property real monthlyRateLimitPercent: -1
+    property string monthlyRateLimitLabel: ""
+    property string monthlyRateLimitResetAt: ""
 
     property string tierLabel: ""
     property string usageStatusText: ""
@@ -33,7 +36,7 @@ Item {
     }
 
     function updateState() {
-        root.tierLabel = root.rateLimitPercent >= 0 ? "Opencode Go usage" : "Set workspace ID + cookie";
+        root.tierLabel = root.rateLimitPercent >= 0 ? "Active" : "";
         root.ready = root.rateLimitPercent >= 0 || root.usageStatusText !== "";
     }
 
@@ -59,6 +62,7 @@ Item {
             root.usageStatusText = "Set workspace ID + cookie in settings";
             root.rateLimitPercent = -1;
             root.secondaryRateLimitPercent = -1;
+            root.monthlyRateLimitPercent = -1;
             root.updateState();
             return;
         }
@@ -72,7 +76,7 @@ Item {
 
     function parseUsage(body) {
         function grab(key) {
-            const m = body.match(new RegExp(key + ":[^=]*=\\{([^}]*)\\}"));
+            const m = body.match(new RegExp(key + ":\\$R\\[\\d+\\]=\\{([^}]*)\\}"));
             if (!m)
                 return null;
             const obj = {};
@@ -99,12 +103,13 @@ Item {
             root.usageStatusText = "No usage data in page (not authed?)";
             root.rateLimitPercent = -1;
             root.secondaryRateLimitPercent = -1;
+            root.monthlyRateLimitPercent = -1;
             root.updateState();
             return;
         }
         if (rolling) {
             root.rateLimitPercent = (rolling.usagePercent ?? 0) / 100;
-            root.rateLimitLabel = "Go 5h";
+            root.rateLimitLabel = "5-hour Usage";
             root.rateLimitResetAt = rolling.resetInSec != null
                 ? root.formatResetTime(new Date(Date.now() + rolling.resetInSec * 1000).toISOString())
                 : "";
@@ -113,17 +118,29 @@ Item {
         }
         if (weekly) {
             root.secondaryRateLimitPercent = (weekly.usagePercent ?? 0) / 100;
-            root.secondaryRateLimitLabel = "Go wk";
+            root.secondaryRateLimitLabel = "Weekly Usage";
+            root.secondaryRateLimitResetAt = weekly.resetInSec != null
+                ? root.formatResetTime(new Date(Date.now() + weekly.resetInSec * 1000).toISOString())
+                : "";
         } else {
             root.secondaryRateLimitPercent = -1;
+        }
+        if (monthly) {
+            root.monthlyRateLimitPercent = (monthly.usagePercent ?? 0) / 100;
+            root.monthlyRateLimitLabel = "Monthly Usage";
+            root.monthlyRateLimitResetAt = monthly.resetInSec != null
+                ? root.formatResetTime(new Date(Date.now() + monthly.resetInSec * 1000).toISOString())
+                : "";
+        } else {
+            root.monthlyRateLimitPercent = -1;
         }
         const parts = [];
         if (rolling)
             parts.push("5h " + rolling.usagePercent + "%");
         if (weekly)
-            parts.push("wk " + weekly.usagePercent + "%");
+            parts.push("week " + weekly.usagePercent + "%");
         if (monthly)
-            parts.push("mo " + monthly.usagePercent + "%");
+            parts.push("month " + monthly.usagePercent + "%");
         root.usageStatusText = parts.join(" · ");
         root.updateState();
     }

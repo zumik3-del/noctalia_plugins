@@ -18,6 +18,23 @@ Item {
     property var mainInstance: pluginApi?.mainInstance
     property var activeProvider: mainInstance?.activeProvider
 
+    function barPercent(p) {
+        const mode = mainInstance?.barLimit ?? "5h";
+        if (mode === "week")
+            return p?.secondaryRateLimitPercent ?? -1;
+        if (mode === "month")
+            return p?.monthlyRateLimitPercent ?? -1;
+        return p?.rateLimitPercent ?? -1;
+    }
+
+    function formatPct(fraction) {
+        const v = fraction * 100;
+        if (!isFinite(v))
+            return "\u2014";
+        const r = Math.round(v * 10) / 10;
+        return (Number.isInteger(r) ? r.toString() : r.toFixed(1)) + "%";
+    }
+
     readonly property string screenName: screen ? screen.name : ""
     readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
     readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
@@ -27,32 +44,27 @@ Item {
     property string displayText: {
         if (!activeProvider)
             return "\u2014";
-        const rl = activeProvider.rateLimitPercent ?? -1;
-        const rl2 = activeProvider.secondaryRateLimitPercent ?? -1;
-        if (!(rl >= 0)) {
+        const pct = barPercent(activeProvider);
+        if (!(pct >= 0)) {
             const status = String(activeProvider.usageStatusText ?? "");
             if (status !== "")
                 return status;
             return "\u2014";
         }
-        let text = Math.round(rl * 100) + "%";
-        if (rl2 >= 0)
-            text += "·" + Math.round(rl2 * 100) + "%";
-        return text;
+        return formatPct(pct);
     }
 
     property string tooltipText: {
         if (!activeProvider)
             return "Opencode Go Usage";
         const name = activeProvider.providerName;
-        const rl = activeProvider.rateLimitPercent;
-        const rl2 = activeProvider.secondaryRateLimitPercent;
-        if (rl >= 0) {
-            let tip = name + " \u2014 " + (activeProvider.rateLimitLabel ?? "") + ": " + Math.round(rl * 100) + "%";
-            if (rl2 >= 0)
-                tip += " \u00b7 " + (activeProvider.secondaryRateLimitLabel ?? "") + ": " + Math.round(rl2 * 100) + "%";
-            return tip;
-        }
+        const mode = mainInstance?.barLimit ?? "5h";
+        const label = mode === "week" ? (activeProvider.secondaryRateLimitLabel ?? "week")
+                    : mode === "month" ? (activeProvider.monthlyRateLimitLabel ?? "month")
+                    : (activeProvider.rateLimitLabel ?? "5h");
+        const pct = barPercent(activeProvider);
+        if (pct >= 0)
+            return name + " \u2014 " + label + ": " + formatPct(pct);
         const status = activeProvider.usageStatusText ?? "";
         return name + (status !== "" ? " \u2014 " + status : "");
     }
@@ -74,6 +86,11 @@ Item {
                 "action": "refresh",
                 "icon": "refresh"
             },
+            {
+                "label": "Settings",
+                "action": "settings",
+                "icon": "settings"
+            },
         ]
 
         onTriggered: (action, item) => {
@@ -81,6 +98,8 @@ Item {
             PanelService.closeContextMenu(root.screen);
             if (action === "refresh") {
                 mainInstance?.refresh();
+            } else if (action === "settings") {
+                BarService.openPluginSettings(root.screen, pluginApi.manifest);
             }
         }
     }

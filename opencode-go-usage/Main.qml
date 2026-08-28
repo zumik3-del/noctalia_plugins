@@ -18,12 +18,7 @@ Item {
 
     property var providers: [opencodeGoProvider]
 
-    property var enabledProviders: {
-        const result = [];
-        if (opencodeGoProvider.enabled)
-            result.push(opencodeGoProvider);
-        return result;
-    }
+    property var enabledProviders: providers.filter(p => p.enabled)
 
     property var activeProvider: enabledProviders.length > 0 ? enabledProviders[0] : null
 

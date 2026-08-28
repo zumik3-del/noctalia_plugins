@@ -1,0 +1,12 @@
+# Agent instructions (local-only, not committed)
+AGENTS.md
+
+# Plugin local settings (user state, not committed)
+settings.json
+
+# Build / cache / OS junk
+*.qmlc
+*.swp
+*.log
+.DS_Store
+Thumbs.db

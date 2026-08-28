@@ -15,6 +15,9 @@ ColumnLayout {
   property var cfg: pluginApi?.pluginSettings || ({})
   property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
 
+  // initial values come from noctalia settings as a fallback; the actual
+  // source of truth is screenrec.conf, so we override with `screenrec get`
+  // below once it returns.
   property string valueOutDir: cfg.outDir ?? defaults.outDir ?? "~/Downloads"
   property string valueFps: String(cfg.fps ?? defaults.fps ?? 15)
   property string valueFormat: cfg.format ?? defaults.format ?? "mp4"
@@ -54,6 +57,25 @@ ColumnLayout {
   Process { id: setDirProc }
   Process { id: setFpsProc }
   Process { id: setFmtProc }
+
+  // read the effective config from screenrec.conf so the UI matches reality
+  Process {
+    id: getProc
+    running: true
+    command: [screenrecBin, "get"]
+    stdout: StdioCollector {
+      onStreamFinished: root.parseGet(this.text)
+    }
+  }
+
+  function parseGet(text) {
+    try {
+      var g = JSON.parse(text.trim())
+      if (g.outDir) valueOutDir = g.outDir
+      if (g.fps) valueFps = String(g.fps)
+      if (g.format) valueFormat = g.format
+    } catch (e) { }
+  }
 
   function commitOutDir() {
     if (!pluginApi)

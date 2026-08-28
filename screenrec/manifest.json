@@ -1,12 +1,12 @@
 {
   "id": "screenrec",
   "name": "ScreenRec",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "minNoctaliaVersion": "3.0.0",
-  "author": "zumik",
+  "author": "zumik3-del",
   "license": "MIT",
-  "description": "Screen recording to MP4 on niri (grim/slurp/ffmpeg).",
-  "tags": ["Bar", "Utility"],
+  "description": "Screen recording to MP4/WebM/MKV/GIF on Wayland (grim + slurp + ffmpeg) with a bar widget, live status indicator, and folder/fps/format settings.",
+  "tags": ["Bar", "Utility", "Screen Recording"],
   "entryPoints": {
     "main": "Main.qml",
     "barWidget": "BarWidget.qml",

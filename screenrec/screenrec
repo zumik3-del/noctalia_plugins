@@ -26,6 +26,8 @@ case "$OUT_DIR" in
   "~"|"~/"*) OUT_DIR="$HOME${OUT_DIR#\~}" ;;
 esac
 STEP="$(awk "BEGIN{printf \"%.4f\", 1/$FPS}")"
+# step duration in nanoseconds, used to keep capture real-time
+STEP_NS="$(awk "BEGIN{printf \"%d\", 1000000000/$FPS}")"
 
 # Notify that the video was saved.
 notify_saved() {
@@ -83,8 +85,15 @@ case "$cmd" in
     i=0
     while [ -f "$DIR/start" ]; do
       i=$((i + 1))
+      t0="$(date +%s%N)"
       grim -g "$region" "$TMP/f$(printf %05d "$i").png" 2>/dev/null || true
-      sleep "$STEP"
+      t1="$(date +%s%N)"
+      # sleep only the remaining time so each frame occupies exactly 1/FPS
+      # of wall-clock; otherwise grim's own overhead speeds the video up.
+      remainder_ns="$((STEP_NS - (t1 - t0)))"
+      if [ "$remainder_ns" -gt 0 ]; then
+        sleep "$(awk "BEGIN{printf \"%.6f\", $remainder_ns / 1000000000}")"
+      fi
     done
     shopt -s nullglob
     files=("$TMP"/f*.png)
@@ -151,18 +160,23 @@ case "$cmd" in
     esac
     ;;
 
+  get)
+    # print the currently effective settings (what the script will actually use)
+    printf '{"outDir":"%s","fps":"%s","format":"%s"}' "$OUT_DIR" "$FPS" "$FMT"
+    ;;
+
   status)
     f="$DIR/start"
     if [ ! -f "$f" ]; then
       # idle: camera icon in the theme color, no label
-      printf '{"icon":"camera-video","iconColor":"none","textColor":"none","text":""}'
+      printf '{"icon":"camera-video","text":""}'
       exit 0
     fi
     s="$(cat "$f")"
     now="$(date +%s)"
     e=$((now - s))
-    # while recording, same camera icon but red (via iconColor)
-    printf '{"icon":"camera-video","iconColor":"error","textColor":"error","text":"REC %d:%02d"}' \
+    # while recording, the bar widget colors the camera icon red based on text != ""
+    printf '{"icon":"camera-video","text":"REC %d:%02d"}' \
       "$((e / 60))" "$((e % 60))"
     ;;
 
@@ -187,7 +201,7 @@ case "$cmd" in
     ;;
 
   *)
-    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys}" >&2
+    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get}" >&2
     exit 1
     ;;
 esac

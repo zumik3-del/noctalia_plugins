@@ -3,7 +3,7 @@
     {
       "id": "screenrec",
       "name": "ScreenRec",
-      "description": "Screen recording to MP4/WebM/MKV/GIF on Wayland (grim + slurp + ffmpeg) with a bar widget, live status indicator, and folder/fps/format settings.",
+      "description": "Wayland screen recorder (grim + slurp + ffmpeg) with a bar widget.",
       "version": "1.3.2",
       "author": "zumik3-del",
       "tags": ["Bar", "Utility", "Screen Recording"],

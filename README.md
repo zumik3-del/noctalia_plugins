@@ -33,7 +33,6 @@ The following system tools must be installed:
   bind: Mod+Shift+X { spawn -- "screenrec" "stop"; }
   ```
 - **Settings:** output folder (default `~/Downloads`), frame rate (15), format.
-- **Deps:** `grim`, `slurp`, `ffmpeg`, `notify-send`; optional `ydotool` (removes the `slurp` start flicker on niri).
 
 ## Opencode Go Usage
 

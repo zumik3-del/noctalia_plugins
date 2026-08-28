@@ -13,7 +13,7 @@
     {
       "id": "opencode-go-usage",
       "name": "Opencode Go Usage",
-      "description": "Shows Opencode Go (Zen) AI coding assistant usage limits (5h / weekly / monthly) in the bar, pulled from the opencode.ai console via workspace ID + session cookie.",
+      "description": "Shows Opencode Go AI coding assistant usage limits",
       "version": "0.2.1",
       "author": "zumik3-del",
       "tags": ["Bar", "Productivity", "AI"],

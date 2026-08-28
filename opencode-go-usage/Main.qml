@@ -29,7 +29,8 @@ Item {
 
     property string barDisplayMode: pluginSettings?.barDisplayMode ?? "active"
     property int barCycleIntervalSec: pluginSettings?.barCycleIntervalSec ?? 5
-    property int refreshIntervalSec: pluginSettings?.refreshIntervalSec ?? 30
+    property string barLimit: pluginSettings?.barLimit ?? "5h"
+    property int refreshIntervalSec: pluginSettings?.refreshIntervalSec ?? 1800
 
     Timer {
         interval: root.barCycleIntervalSec * 1000

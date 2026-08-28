@@ -12,10 +12,18 @@ Item {
     readonly property color sectionBackgroundColor: Color.mSurfaceVariant
     readonly property color usageWarnColor: Qt.alpha(Color.mError, 0.72)
 
+    function formatPct(fraction) {
+        const v = fraction * 100;
+        if (!isFinite(v))
+            return "\u2014";
+        const r = Math.round(v * 10) / 10;
+        return (Number.isInteger(r) ? r.toString() : r.toFixed(1)) + "%";
+    }
+
     readonly property var geometryPlaceholder: panelContainer
     readonly property bool allowAttach: true
     property real contentPreferredWidth: 400 * Style.uiScaleRatio
-    property real contentPreferredHeight: 420 * Style.uiScaleRatio
+    property real contentPreferredHeight: contentColumn.implicitHeight + Style.marginL * 2
 
     anchors.fill: parent
 
@@ -32,10 +40,11 @@ Item {
         anchors.fill: parent
         color: "transparent"
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: Style.marginL
-            spacing: 0
+            ColumnLayout {
+                id: contentColumn
+                anchors.fill: parent
+                anchors.margins: Style.marginL
+                spacing: 0
 
             NText {
                 visible: !root.selectedProvider
@@ -95,7 +104,7 @@ Item {
             }
 
             Rectangle {
-                visible: !!root.selectedProvider && (root.selectedProvider?.usageStatusText ?? "") !== ""
+                visible: !!root.selectedProvider && (root.selectedProvider?.rateLimitPercent ?? -1) < 0 && (root.selectedProvider?.usageStatusText ?? "") !== ""
                 Layout.fillWidth: true
                 color: Qt.alpha(Color.mError, 0.12)
                 radius: Style.radiusS
@@ -163,7 +172,7 @@ Item {
                                     const u = root.selectedProvider?.rateLimitPercent ?? -1;
                                     if (u < 0)
                                         return "\u2014";
-                                    return Math.round(u * 100) + "%";
+                                    return formatPct(u);
                                 }
                                 pointSize: Style.fontSizeS
                                 font.weight: Style.fontWeightBold
@@ -238,7 +247,7 @@ Item {
                                     const u = root.selectedProvider?.secondaryRateLimitPercent ?? -1;
                                     if (u < 0)
                                         return "\u2014";
-                                    return Math.round(u * 100) + "%";
+                                    return formatPct(u);
                                 }
                                 pointSize: Style.fontSizeS
                                 font.weight: Style.fontWeightBold
@@ -288,6 +297,81 @@ Item {
                         NText {
                             visible: (root.selectedProvider?.secondaryRateLimitResetAt ?? "") !== ""
                             text: "Resets in " + (root.selectedProvider?.secondaryRateLimitResetAt ?? "")
+                            pointSize: Style.fontSizeXS
+                            color: Color.mOnSurfaceVariant
+                        }
+                    }
+
+                    ColumnLayout {
+                        visible: (root.selectedProvider?.monthlyRateLimitPercent ?? -1) >= 0
+                        Layout.fillWidth: true
+                        spacing: Style.marginXS
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            NText {
+                                text: root.selectedProvider?.monthlyRateLimitLabel ?? ""
+                                pointSize: Style.fontSizeS
+                                color: Color.mOnSurfaceVariant
+                            }
+                            Item {
+                                Layout.fillWidth: true
+                            }
+                            NText {
+                                text: {
+                                    const u = root.selectedProvider?.monthlyRateLimitPercent ?? -1;
+                                    if (u < 0)
+                                        return "\u2014";
+                                    return formatPct(u);
+                                }
+                                pointSize: Style.fontSizeS
+                                font.weight: Style.fontWeightBold
+                                color: {
+                                    const u = root.selectedProvider?.monthlyRateLimitPercent ?? 0;
+                                    if (u >= 0.9)
+                                        return Color.mError;
+                                    if (u >= 0.7)
+                                        return root.usageWarnColor;
+                                    return Color.mOnSurface;
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 8
+                            color: Qt.alpha(Color.mOutline, 0.2)
+                            radius: Style.radiusXXS
+
+                            Rectangle {
+                                anchors {
+                                    left: parent.left
+                                    top: parent.top
+                                    bottom: parent.bottom
+                                }
+                                radius: Style.radiusXXS
+                                color: {
+                                    const u = root.selectedProvider?.monthlyRateLimitPercent ?? 0;
+                                    if (u >= 0.9)
+                                        return Color.mError;
+                                    if (u >= 0.7)
+                                        return root.usageWarnColor;
+                                    return Color.mPrimary;
+                                }
+                                width: parent.width * Math.min(1.0, Math.max(0, root.selectedProvider?.monthlyRateLimitPercent ?? 0))
+
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: Style.animationNormal
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                            }
+                        }
+
+                        NText {
+                            visible: (root.selectedProvider?.monthlyRateLimitResetAt ?? "") !== ""
+                            text: "Resets in " + (root.selectedProvider?.monthlyRateLimitResetAt ?? "")
                             pointSize: Style.fontSizeXS
                             color: Color.mOnSurfaceVariant
                         }

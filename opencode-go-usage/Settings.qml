@@ -112,24 +112,57 @@ ColumnLayout {
                 spacing: Style.marginXS
 
                 NText {
-                    text: "Refresh interval (seconds)"
+                    text: "Refresh interval"
                     pointSize: Style.fontSizeM
                     font.weight: Style.fontWeightSemiBold
                     color: Color.mOnSurface
                 }
                 NText {
-                    text: "Fallback polling interval when file watch misses changes"
+                    text: "How often to poll the opencode.ai console for usage"
                     pointSize: Style.fontSizeXS
                     color: Color.mOnSurfaceVariant
                 }
 
-                NSpinBox {
-                    from: 5
-                    to: 300
-                    value: editSettings?.refreshIntervalSec ?? 30
-                    stepSize: 5
-                    onValueChanged: {
-                        editSettings.refreshIntervalSec = value;
+                NComboBox {
+                    Layout.fillWidth: true
+                    model: [
+                        { key: 1800, name: "30 minutes" },
+                        { key: 3600, name: "1 hour" },
+                        { key: 10800, name: "3 hours" }
+                    ]
+                    currentKey: Number(editSettings?.refreshIntervalSec ?? 1800)
+                    onSelected: key => {
+                        editSettings.refreshIntervalSec = Number(key);
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+
+                NText {
+                    text: "Show in bar"
+                    pointSize: Style.fontSizeM
+                    font.weight: Style.fontWeightSemiBold
+                    color: Color.mOnSurface
+                }
+                NText {
+                    text: "Which usage limit to display in the bar capsule"
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurfaceVariant
+                }
+
+                NComboBox {
+                    Layout.fillWidth: true
+                    model: [
+                        { key: "5h", name: "5-hour limit" },
+                        { key: "week", name: "Weekly limit" },
+                        { key: "month", name: "Monthly limit" }
+                    ]
+                    currentKey: editSettings?.barLimit ?? "5h"
+                    onSelected: key => {
+                        editSettings.barLimit = key;
                     }
                 }
             }

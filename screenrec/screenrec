@@ -151,18 +151,23 @@ case "$cmd" in
     esac
     ;;
 
+  get)
+    # print the currently effective settings (what the script will actually use)
+    printf '{"outDir":"%s","fps":"%s","format":"%s"}' "$OUT_DIR" "$FPS" "$FMT"
+    ;;
+
   status)
     f="$DIR/start"
     if [ ! -f "$f" ]; then
       # idle: camera icon in the theme color, no label
-      printf '{"icon":"camera-video","iconColor":"none","textColor":"none","text":""}'
+      printf '{"icon":"camera-video","text":""}'
       exit 0
     fi
     s="$(cat "$f")"
     now="$(date +%s)"
     e=$((now - s))
-    # while recording, same camera icon but red (via iconColor)
-    printf '{"icon":"camera-video","iconColor":"error","textColor":"error","text":"REC %d:%02d"}' \
+    # while recording, the bar widget colors the camera icon red based on text != ""
+    printf '{"icon":"camera-video","text":"REC %d:%02d"}' \
       "$((e / 60))" "$((e % 60))"
     ;;
 
@@ -187,7 +192,7 @@ case "$cmd" in
     ;;
 
   *)
-    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys}" >&2
+    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get}" >&2
     exit 1
     ;;
 esac

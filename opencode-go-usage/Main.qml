@@ -30,7 +30,15 @@ Item {
     property string barLimit: pluginSettings?.barLimit ?? "5h"
     property int refreshIntervalSec: pluginSettings?.refreshIntervalSec ?? 1800
 
+    function applySettings() {
+        root.barLimit = pluginApi?.pluginSettings?.barLimit ?? "5h";
+        root.refreshIntervalSec = pluginApi?.pluginSettings?.refreshIntervalSec ?? 1800;
+        refreshTimer.interval = root.refreshIntervalSec * 1000;
+        refreshTimer.restart();
+    }
+
     Timer {
+        id: refreshTimer
         interval: root.refreshIntervalSec * 1000
         running: true
         repeat: true

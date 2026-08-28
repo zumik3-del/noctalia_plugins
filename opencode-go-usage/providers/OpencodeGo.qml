@@ -7,7 +7,7 @@ Item {
     id: root
     visible: false
 
-    property string providerId: "opencode-go"
+    property string providerId: "opencodeGo"
     property string providerName: "Opencode Go"
     property string providerIcon: "ai"
     property bool enabled: false

@@ -30,6 +30,16 @@ Item {
   property string _text: ""
   readonly property bool recording: _text !== ""
 
+  // pulsing effect while recording (README: "pulsing red REC m:ss")
+  property real pulseOpacity: 1
+  SequentialAnimation {
+    id: pulseAnim
+    running: root.recording
+    loops: Animation.Infinite
+    NumberAnimation { target: root; property: "pulseOpacity"; from: 1.0; to: 0.35; duration: 700; easing.type: Easing.InOutSine }
+    NumberAnimation { target: root; property: "pulseOpacity"; from: 0.35; to: 1.0; duration: 700; easing.type: Easing.InOutSine }
+  }
+
   readonly property real contentWidth: row.implicitWidth + Style.marginM * 2
   readonly property real contentHeight: capsuleHeight
   implicitWidth: isVertical ? capsuleHeight : contentWidth
@@ -92,6 +102,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         icon: root._icon
         color: root.recording ? Color.mError : Color.mOnSurface
+        opacity: root.recording ? root.pulseOpacity : 1
         applyUiScale: false
       }
 
@@ -100,6 +111,7 @@ Item {
         visible: root._text !== ""
         text: root._text
         color: root.recording ? Color.mError : Color.mOnSurface
+        opacity: root.recording ? root.pulseOpacity : 1
         pointSize: root.barFontSize
         applyUiScale: false
       }

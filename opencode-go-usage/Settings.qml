@@ -15,6 +15,7 @@ ColumnLayout {
         pluginApi.pluginSettings = JSON.parse(JSON.stringify(root.editSettings));
         pluginApi.saveSettings();
         pluginApi?.mainInstance?.secureSettingsFile?.();
+        pluginApi?.mainInstance?.applySettings?.();
     }
 
     spacing: Style.marginL
@@ -213,6 +214,7 @@ ColumnLayout {
             text: "Reset"
             onClicked: {
                 root.editSettings = JSON.parse(JSON.stringify(pluginApi?.manifest?.metadata?.defaultSettings ?? {}));
+                root.saveSettings();
             }
         }
     }

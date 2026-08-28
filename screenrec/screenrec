@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# screenrec - record a region/screen to MP4 on Wayland (niri + grim/slurp/ffmpeg)
+# screenrec - record a region/screen to MP4/WebM/MKV/GIF on Wayland (niri + grim/slurp/ffmpeg)
 #
 # Subcommands:
 #   screenrec start    pick a region (slurp) and start recording
@@ -21,10 +21,6 @@ CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
 OUT_DIR="${SCREENREC_OUT_DIR:-~/Downloads}"
 FPS="${SCREENREC_FPS:-15}"
 FMT="${SCREENREC_FORMAT:-mp4}"
-# Expand a leading ~ (works for any user/host)
-case "$OUT_DIR" in
-  "~"|"~/"*) OUT_DIR="$HOME${OUT_DIR#\~}" ;;
-esac
 STEP="$(awk "BEGIN{printf \"%.4f\", 1/$FPS}")"
 # step duration in nanoseconds, used to keep capture real-time
 STEP_NS="$(awk "BEGIN{printf \"%d\", 1000000000/$FPS}")"
@@ -98,23 +94,23 @@ case "$cmd" in
     shopt -s nullglob
     files=("$TMP"/f*.png)
     if [ "${#files[@]}" -gt 0 ]; then
-      mkdir -p "$OUT_DIR"
+      mkdir -p "${OUT_DIR/#\~/$HOME}"
       STAMP="$(date +%Y%m%d-%H%M%S)"
       case "$FMT" in
         webm)
-          OUT="$OUT_DIR/screenrec-$STAMP.webm"
+          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.webm"
           ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
             -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
             -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 "$OUT"
           ;;
         mkv)
-          OUT="$OUT_DIR/screenrec-$STAMP.mkv"
+          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mkv"
           ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
             -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
             -c:v libx264 -crf 18 -preset veryfast "$OUT"
           ;;
         gif)
-          OUT="$OUT_DIR/screenrec-$STAMP.gif"
+          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.gif"
           ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
             -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,palettegen" "$TMP/palette.png"
           ffmpeg -y -hide_banner -loglevel error -i "$TMP/f%05d.png" -i "$TMP/palette.png" \
@@ -122,7 +118,7 @@ case "$cmd" in
           rm -f "$TMP/palette.png"
           ;;
         *)
-          OUT="$OUT_DIR/screenrec-$STAMP.mp4"
+          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mp4"
           ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
             -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
             -c:v libx264 -crf 18 -preset veryfast "$OUT"

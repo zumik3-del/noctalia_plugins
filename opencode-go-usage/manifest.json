@@ -6,7 +6,7 @@
   "author": "zumik3-del",
   "license": "MIT",
   "repository": "https://github.com/zumik3-del/noctalia_plugins",
-  "description": "Shows Opencode Go (Zen) AI coding assistant usage limits (5h / weekly / monthly) in the bar, pulled from the opencode.ai console via workspace ID + session cookie.",
+  "description": "Shows Opencode Go AI coding assistant usage limits",
   "tags": [
     "Bar",
     "Productivity",

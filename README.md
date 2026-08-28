@@ -17,6 +17,15 @@ folder is never copied or symlinked standalone.
 Screen recording on Wayland (niri) to **MP4 / WebM / MKV / GIF** via `grim` + `slurp` + `ffmpeg`.
 Bar widget shows a pulsing red `REC m:ss`; left-click toggles record, right-click opens settings.
 
+### Requirements
+The following system tools must be installed:
+- `bash` — runs the `screenrec` script.
+- `grim` — captures the screen/region.
+- `slurp` — selects the recording region.
+- `ffmpeg` — encodes frames to video (needs `libx264` for MP4/MKV, `libvpx-vp9` for WebM, and `libvpx`/palette support for GIF).
+- `notify-send` (from `libnotify`) — shows start/saved notifications.
+- `ydotool` *(optional)* — removes the `slurp` start flicker on niri.
+
 - **Bar:** left-click start/stop (opens `slurp` for region pick, `Esc` cancels).
 - **Hotkeys** (`~/.config/niri/config.kdl`):
   ```kdl
@@ -34,6 +43,12 @@ scraped from the opencode.ai console via your session cookie.
 In plugin settings → enable **Opencode Go**, then:
 - **Workspace ID** — from the console URL `https://opencode.ai/workspace/<id>/go`.
 - **Session cookie** — copy the `auth` cookie value from browser devtools; it expires on logout.
+
+### Requirements
+The following system tools must be installed:
+- `curl` — fetches the opencode.ai console page locally (QML can't send `Cookie` headers directly).
+
+You also need an Opencode Go (Zen) account and a valid session cookie from `opencode.ai`.
 
 Notes: QML can't send `Cookie` headers, so a local `curl` is used. The data comes from the
 console page HTML and may break if opencode.ai changes its format.

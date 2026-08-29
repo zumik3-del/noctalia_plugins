@@ -4,6 +4,7 @@ import Quickshell
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets
+import "formatUtils.js" as FormatUtils
 
 Item {
     id: root
@@ -27,14 +28,6 @@ Item {
         return p?.rateLimitPercent ?? -1;
     }
 
-    function formatPct(fraction) {
-        const v = fraction * 100;
-        if (!isFinite(v))
-            return "\u2014";
-        const r = Math.round(v * 10) / 10;
-        return (Number.isInteger(r) ? r.toString() : r.toFixed(1)) + "%";
-    }
-
     readonly property string screenName: screen ? screen.name : ""
     readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
     readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
@@ -51,7 +44,7 @@ Item {
                 return status;
             return "\u2014";
         }
-        return formatPct(pct);
+        return FormatUtils.formatPct(pct);
     }
 
     property string tooltipText: {
@@ -64,7 +57,7 @@ Item {
                     : (activeProvider.rateLimitLabel ?? "5h");
         const pct = barPercent(activeProvider);
         if (pct >= 0)
-            return name + " \u2014 " + label + ": " + formatPct(pct);
+            return name + " \u2014 " + label + ": " + FormatUtils.formatPct(pct);
         const status = activeProvider.usageStatusText ?? "";
         return name + (status !== "" ? " \u2014 " + status : "");
     }

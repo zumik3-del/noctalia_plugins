@@ -30,6 +30,12 @@ notify_saved() {
   notify-send "Video saved" "$(basename "$1")" 2>/dev/null || true
 }
 
+write_conf() {
+  # $1 out-dir, $2 fps, $3 format
+  mkdir -p "$(dirname "$CONF")"
+  printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "$1" "$2" "$3" > "$CONF"
+}
+
 cmd="${1:-}"
 
 case "$cmd" in
@@ -135,19 +141,18 @@ case "$cmd" in
 
   set)
     CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
-    mkdir -p "$(dirname "$CONF")"
     case "${2:-}" in
       out-dir)
         [ -f "$CONF" ] && . "$CONF"
-        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "$3" "${SCREENREC_FPS:-15}" "${SCREENREC_FORMAT:-mp4}" > "$CONF"
+        write_conf "$3" "${SCREENREC_FPS:-15}" "${SCREENREC_FORMAT:-mp4}"
         ;;
       fps)
         [ -f "$CONF" ] && . "$CONF"
-        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "${SCREENREC_OUT_DIR:-~/Downloads}" "$3" "${SCREENREC_FORMAT:-mp4}" > "$CONF"
+        write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "$3" "${SCREENREC_FORMAT:-mp4}"
         ;;
       format)
         [ -f "$CONF" ] && . "$CONF"
-        printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "${SCREENREC_OUT_DIR:-~/Downloads}" "${SCREENREC_FPS:-15}" "$3" > "$CONF"
+        write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "${SCREENREC_FPS:-15}" "$3"
         ;;
       *)
         echo "Usage: screenrec set {out-dir|fps|format} VALUE" >&2

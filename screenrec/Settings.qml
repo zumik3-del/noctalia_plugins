@@ -77,31 +77,23 @@ ColumnLayout {
     } catch (e) { }
   }
 
-  function commitOutDir() {
+  function writeConf() {
+    setDirProc.command = [screenrecBin, "set", "out-dir", valueOutDir]
+    setDirProc.running = true
+    setFpsProc.command = [screenrecBin, "set", "fps", valueFps]
+    setFpsProc.running = true
+    setFmtProc.command = [screenrecBin, "set", "format", valueFormat]
+    setFmtProc.running = true
+  }
+
+  function persist() {
     if (!pluginApi)
       return
     pluginApi.pluginSettings.outDir = valueOutDir
-    pluginApi.saveSettings()
-    setDirProc.command = [screenrecBin, "set", "out-dir", valueOutDir]
-    setDirProc.running = true
-  }
-
-  function commitFps() {
-    if (!pluginApi)
-      return
     pluginApi.pluginSettings.fps = Number(valueFps)
-    pluginApi.saveSettings()
-    setFpsProc.command = [screenrecBin, "set", "fps", valueFps]
-    setFpsProc.running = true
-  }
-
-  function commitFormat() {
-    if (!pluginApi)
-      return
     pluginApi.pluginSettings.format = valueFormat
     pluginApi.saveSettings()
-    setFmtProc.command = [screenrecBin, "set", "format", valueFormat]
-    setFmtProc.running = true
+    writeConf()
   }
 
   spacing: Style.marginL
@@ -116,7 +108,7 @@ ColumnLayout {
     buttonTooltip: "Select folder"
     onInputEditingFinished: {
       valueOutDir = text
-      commitOutDir()
+      persist()
     }
     onButtonClicked: dirPicker.openFilePicker()
   }
@@ -129,7 +121,7 @@ ColumnLayout {
     onAccepted: function (paths) {
       if (paths && paths.length > 0) {
         valueOutDir = paths[0]
-        commitOutDir()
+        persist()
       }
     }
   }
@@ -148,7 +140,7 @@ ColumnLayout {
     currentKey: valueFps
     onSelected: function (key) {
       valueFps = key
-      commitFps()
+      persist()
     }
   }
 
@@ -165,7 +157,7 @@ ColumnLayout {
     currentKey: valueFormat
     onSelected: function (key) {
       valueFormat = key
-      commitFormat()
+      persist()
     }
   }
 
@@ -182,19 +174,7 @@ ColumnLayout {
       Logger.e("ScreenRec", "Cannot save settings: pluginApi is null")
       return
     }
-
-    pluginApi.pluginSettings.outDir = valueOutDir
-    pluginApi.pluginSettings.fps = Number(valueFps)
-    pluginApi.pluginSettings.format = valueFormat
-    pluginApi.saveSettings()
-
-    setDirProc.command = [screenrecBin, "set", "out-dir", valueOutDir]
-    setDirProc.running = true
-    setFpsProc.command = [screenrecBin, "set", "fps", valueFps]
-    setFpsProc.running = true
-    setFmtProc.command = [screenrecBin, "set", "format", valueFormat]
-    setFmtProc.running = true
-
+    persist()
     Logger.i("ScreenRec", "Settings saved")
   }
 }

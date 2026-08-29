@@ -29,6 +29,18 @@ Item {
   property string _text: ""
   readonly property bool recording: _text !== ""
 
+  // missing required tools (grim/slurp/ffmpeg) reported by `screenrec deps`
+  readonly property var depsMissing: []
+  readonly property bool depsOk: depsMissing.length === 0
+  readonly property string displayIcon: (!root.depsOk) ? "alert-triangle" : root._icon
+  readonly property color displayColor: (!root.depsOk)
+    ? Color.mError
+    : (root.recording ? Color.mError : Color.mOnSurface)
+  readonly property string depsTooltip: {
+    if (root.depsOk) return ""
+    return "ScreenRec: missing required tools: " + root.depsMissing.join(", ") + ". Install them to record."
+  }
+
   // pulsing effect while recording (README: "pulsing red REC m:ss")
   property real pulseOpacity: 1
   SequentialAnimation {
@@ -66,6 +78,20 @@ Item {
     }
   }
 
+  Process {
+    id: depsProc
+    running: true
+    command: [screenrecBin, "deps"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          var d = JSON.parse(this.text.trim())
+          root.depsMissing = d.missing || []
+        } catch (e) { }
+      }
+    }
+  }
+
   Timer {
     id: pollTimer
     interval: 500
@@ -99,8 +125,8 @@ Item {
 
       NIcon {
         anchors.verticalCenter: parent.verticalCenter
-        icon: root._icon
-        color: root.recording ? Color.mError : Color.mOnSurface
+        icon: root.displayIcon
+        color: root.displayColor
         opacity: root.recording ? root.pulseOpacity : 1
         applyUiScale: false
       }
@@ -109,7 +135,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         visible: root._text !== ""
         text: root._text
-        color: root.recording ? Color.mError : Color.mOnSurface
+        color: root.displayColor
         opacity: root.recording ? root.pulseOpacity : 1
         pointSize: root.barFontSize
         applyUiScale: false
@@ -123,6 +149,12 @@ Item {
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     cursorShape: Qt.PointingHandCursor
+
+    onEntered: {
+      if (root.depsTooltip !== "")
+        TooltipService.show(root, root.depsTooltip, BarService.getTooltipDirection(root.screen?.name))
+    }
+    onExited: TooltipService.hide()
 
     onClicked: function (m) {
       if (m.button === Qt.LeftButton) {

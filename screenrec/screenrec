@@ -28,198 +28,198 @@ STEP_NS="$(awk "BEGIN{printf \"%d\", 1000000000/$FPS}")"
 
 # Notify that the video was saved.
 notify_saved() {
-  notify-send "Video saved" "$(basename "$1")" 2>/dev/null || true
+    notify-send "Video saved" "$(basename "$1")" 2>/dev/null || true
 }
 
 write_conf() {
-  # $1 out-dir, $2 fps, $3 format
-  mkdir -p "$(dirname "$CONF")"
-  printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "$1" "$2" "$3" > "$CONF"
+    # $1 out-dir, $2 fps, $3 format
+    mkdir -p "$(dirname "$CONF")"
+    printf 'SCREENREC_OUT_DIR="%s"\nSCREENREC_FPS="%s"\nSCREENREC_FORMAT="%s"\n' "$1" "$2" "$3" > "$CONF"
 }
 
 cmd="${1:-}"
 
 case "$cmd" in
-  start)
-    mkdir -p "$DIR"
-    if pgrep -f "screenrec capture" >/dev/null 2>&1; then
-      notify-send "ScreenRec" "Already recording" 2>/dev/null || true
-      exit 0
-    fi
-    # Region is selected with slurp. An optional geometry argument ("WxH+X+Y")
-    # skips slurp (used by external callers). Both the widget and hotkey paths
-    # rely on slurp.
-    region="${2:-}"
-    if [ -z "$region" ]; then
-      # slurp -o: click a monitor = full screen, drag = region, Esc = cancel.
-      # On niri slurp's overlay does not paint until the first pointer event,
-      # causing a flicker and a blank selection rectangle. If ydotool is
-      # available, nudge the pointer by 1px and back right after slurp maps
-      # its surface to force an immediate repaint. Best-effort; if ydotool is
-      # missing we just use slurp as-is.
-      if command -v ydotool >/dev/null 2>&1; then
-        # ydotool needs its daemon; start it if not already running.
-        pgrep -x ydotoold >/dev/null 2>&1 || ydotoold >/dev/null 2>&1 &
-        sleep 0.2
-        tmpf="$(mktemp)"
-        slurp -o > "$tmpf" 2>/dev/null &
-        slurpid=$!
-        sleep 0.15
-        ydotool mousemove 1 1 2>/dev/null
-        ydotool mousemove -1 -1 2>/dev/null
-        wait "$slurpid"
-        region="$(cat "$tmpf")"
-        rm -f "$tmpf"
-      else
-        region="$(slurp -o 2>/dev/null)" || exit 1
-      fi
-      [ -z "$region" ] && exit 1
-    fi
-    echo "$region" > "$DIR/region"
-    date +%s > "$DIR/start"
-    mktemp -d > "$DIR/tmp"
-    setsid "$0" capture >"$DIR/log" 2>&1 &
-    notify-send "Recording started" 2>/dev/null || true
-    ;;
-
-  capture)
-    TMP="$(cat "$DIR/tmp")"
-    region="$(cat "$DIR/region")"
-    i=0
-    while [ -f "$DIR/start" ]; do
-      i=$((i + 1))
-      t0="$(date +%s%N)"
-      grim -g "$region" "$TMP/f$(printf %05d "$i").png" 2>/dev/null || true
-      t1="$(date +%s%N)"
-      # sleep only the remaining time so each frame occupies exactly 1/FPS
-      # of wall-clock; otherwise grim's own overhead speeds the video up.
-      remainder_ns="$((STEP_NS - (t1 - t0)))"
-      if [ "$remainder_ns" -gt 0 ]; then
-        sleep "$(awk "BEGIN{printf \"%.6f\", $remainder_ns / 1000000000}")"
-      fi
-    done
-    shopt -s nullglob
-    files=("$TMP"/f*.png)
-    if [ "${#files[@]}" -gt 0 ]; then
-      mkdir -p "${OUT_DIR/#\~/$HOME}"
-      STAMP="$(date +%Y%m%d-%H%M%S)"
-      case "$FMT" in
-        webm)
-          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.webm"
-          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
-            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
-            -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 "$OUT"
-          ;;
-        mkv)
-          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mkv"
-          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
-            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
-            -c:v libx264 -crf 18 -preset veryfast "$OUT"
-          ;;
-        gif)
-          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.gif"
-          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
-            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,palettegen" "$TMP/palette.png"
-          ffmpeg -y -hide_banner -loglevel error -i "$TMP/f%05d.png" -i "$TMP/palette.png" \
-            -lavfi "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,paletteuse" "$OUT"
-          rm -f "$TMP/palette.png"
-          ;;
-        *)
-          OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mp4"
-          ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
-            -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
-            -c:v libx264 -crf 18 -preset veryfast "$OUT"
-          ;;
-      esac
-      notify_saved "$OUT"
-    fi
-    rm -rf "$TMP" "$DIR/start" "$DIR/region" "$DIR/tmp" 2>/dev/null || true
-    ;;
-
-  stop)
-    rm -f "$DIR/start"
-    ;;
-
-  set)
-    CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
-    case "${2:-}" in
-      out-dir)
-        [ -f "$CONF" ] && . "$CONF"
-        write_conf "$3" "${SCREENREC_FPS:-15}" "${SCREENREC_FORMAT:-mp4}"
+    start)
+        mkdir -p "$DIR"
+        if pgrep -f "screenrec capture" >/dev/null 2>&1; then
+            notify-send "ScreenRec" "Already recording" 2>/dev/null || true
+            exit 0
+        fi
+        # Region is selected with slurp. An optional geometry argument ("WxH+X+Y")
+        # skips slurp (used by external callers). Both the widget and hotkey paths
+        # rely on slurp.
+        region="${2:-}"
+        if [ -z "$region" ]; then
+            # slurp -o: click a monitor = full screen, drag = region, Esc = cancel.
+            # On niri slurp's overlay does not paint until the first pointer event,
+            # causing a flicker and a blank selection rectangle. If ydotool is
+            # available, nudge the pointer by 1px and back right after slurp maps
+            # its surface to force an immediate repaint. Best-effort; if ydotool is
+            # missing we just use slurp as-is.
+            if command -v ydotool >/dev/null 2>&1; then
+                # ydotool needs its daemon; start it if not already running.
+                pgrep -x ydotoold >/dev/null 2>&1 || ydotoold >/dev/null 2>&1 &
+                sleep 0.2
+                tmpf="$(mktemp)"
+                slurp -o > "$tmpf" 2>/dev/null &
+                slurpid=$!
+                sleep 0.15
+                ydotool mousemove 1 1 2>/dev/null
+                ydotool mousemove -1 -1 2>/dev/null
+                wait "$slurpid"
+                region="$(cat "$tmpf")"
+                rm -f "$tmpf"
+            else
+                region="$(slurp -o 2>/dev/null)" || exit 1
+            fi
+            [ -z "$region" ] && exit 1
+        fi
+        echo "$region" > "$DIR/region"
+        date +%s > "$DIR/start"
+        mktemp -d > "$DIR/tmp"
+        setsid "$0" capture >"$DIR/log" 2>&1 &
+        notify-send "Recording started" 2>/dev/null || true
         ;;
-      fps)
-        [ -f "$CONF" ] && . "$CONF"
-        write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "$3" "${SCREENREC_FORMAT:-mp4}"
+
+    capture)
+        TMP="$(cat "$DIR/tmp")"
+        region="$(cat "$DIR/region")"
+        i=0
+        while [ -f "$DIR/start" ]; do
+            i=$((i + 1))
+            t0="$(date +%s%N)"
+            grim -g "$region" "$TMP/f$(printf %05d "$i").png" 2>/dev/null || true
+            t1="$(date +%s%N)"
+            # sleep only the remaining time so each frame occupies exactly 1/FPS
+            # of wall-clock; otherwise grim's own overhead speeds the video up.
+            remainder_ns="$((STEP_NS - (t1 - t0)))"
+            if [ "$remainder_ns" -gt 0 ]; then
+                sleep "$(awk "BEGIN{printf \"%.6f\", $remainder_ns / 1000000000}")"
+            fi
+        done
+        shopt -s nullglob
+        files=("$TMP"/f*.png)
+        if [ "${#files[@]}" -gt 0 ]; then
+            mkdir -p "${OUT_DIR/#\~/$HOME}"
+            STAMP="$(date +%Y%m%d-%H%M%S)"
+            case "$FMT" in
+                webm)
+                    OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.webm"
+                    ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+                        -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+                        -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 "$OUT"
+                    ;;
+                mkv)
+                    OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mkv"
+                    ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+                        -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
+                        -c:v libx264 -crf 18 -preset veryfast "$OUT"
+                    ;;
+                gif)
+                    OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.gif"
+                    ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+                        -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,palettegen" "$TMP/palette.png"
+                    ffmpeg -y -hide_banner -loglevel error -i "$TMP/f%05d.png" -i "$TMP/palette.png" \
+                        -lavfi "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,paletteuse" "$OUT"
+                    rm -f "$TMP/palette.png"
+                    ;;
+                *)
+                    OUT="${OUT_DIR/#\~/$HOME}/screenrec-$STAMP.mp4"
+                    ffmpeg -y -hide_banner -loglevel error -framerate "$FPS" -i "$TMP/f%05d.png" \
+                        -vf "fps=$FPS,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p" \
+                        -c:v libx264 -crf 18 -preset veryfast "$OUT"
+                    ;;
+            esac
+            notify_saved "$OUT"
+        fi
+        rm -rf "$TMP" "$DIR/start" "$DIR/region" "$DIR/tmp" 2>/dev/null || true
         ;;
-      format)
-        [ -f "$CONF" ] && . "$CONF"
-        write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "${SCREENREC_FPS:-15}" "$3"
+
+    stop)
+        rm -f "$DIR/start"
         ;;
-      *)
-        echo "Usage: screenrec set {out-dir|fps|format} VALUE" >&2
+
+    set)
+        CONF="${XDG_CONFIG_HOME:-$HOME/.config}/screenrec.conf"
+        case "${2:-}" in
+            out-dir)
+                [ -f "$CONF" ] && . "$CONF"
+                write_conf "$3" "${SCREENREC_FPS:-15}" "${SCREENREC_FORMAT:-mp4}"
+                ;;
+            fps)
+                [ -f "$CONF" ] && . "$CONF"
+                write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "$3" "${SCREENREC_FORMAT:-mp4}"
+                ;;
+            format)
+                [ -f "$CONF" ] && . "$CONF"
+                write_conf "${SCREENREC_OUT_DIR:-~/Downloads}" "${SCREENREC_FPS:-15}" "$3"
+                ;;
+            *)
+                echo "Usage: screenrec set {out-dir|fps|format} VALUE" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+
+    get)
+        # print the currently effective settings (what the script will actually use)
+        printf '{"outDir":"%s","fps":"%s","format":"%s"}' "$OUT_DIR" "$FPS" "$FMT"
+        ;;
+
+    status)
+        f="$DIR/start"
+        if [ ! -f "$f" ]; then
+            # idle: camera icon in the theme color, no label
+            printf '{"icon":"camera-video","text":""}'
+            exit 0
+        fi
+        s="$(cat "$f")"
+        now="$(date +%s)"
+        e=$((now - s))
+        # while recording, the bar widget colors the camera icon red based on text != ""
+        printf '{"icon":"camera-video","text":"REC %d:%02d"}' \
+            "$((e / 60))" "$((e % 60))"
+        ;;
+
+    deps)
+        # report missing external tools so the bar widget can warn the user.
+        # required: recording is impossible without them; optional: degraded UX.
+        req="grim slurp ffmpeg"
+        opt="ydotool notify-send"
+        miss=""
+        for t in $req; do
+            command -v "$t" >/dev/null 2>&1 || miss="$miss\"$t\","
+        done
+        omiss=""
+        for t in $opt; do
+            command -v "$t" >/dev/null 2>&1 || omiss="$omiss\"$t\","
+        done
+        printf '{"missing":[%s],"optionalMissing":[%s]}' "${miss%,}" "${omiss%,}"
+        ;;
+
+    hotkeys)
+        # read-only: show key combos bound to screenrec in the niri config
+        f="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+        [ -f "$f" ] || f="$HOME/.config/niri/config.kdl"
+        if [ ! -f "$f" ]; then
+            echo "NOTFOUND"
+            exit 0
+        fi
+        grep -i 'screenrec' "$f" | grep -vE '^[[:space:]]*//' | while IFS= read -r line; do
+            key="$(printf '%s' "$line" | sed 's/{.*//' \
+                        | sed -E 's/^[[:space:]]+//; s/^[[:space:]]*bind:[[:space:]]*//; s/[[:space:]].*//')"
+            act=run
+            case "$line" in
+                *screenrec*start*) act=start ;;
+                *screenrec*stop*)  act=stop ;;
+            esac
+            [ -n "$key" ] && printf '%s %s\n' "$key" "$act"
+        done
+        ;;
+
+    *)
+        echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get|deps}" >&2
         exit 1
         ;;
-    esac
-    ;;
-
-  get)
-    # print the currently effective settings (what the script will actually use)
-    printf '{"outDir":"%s","fps":"%s","format":"%s"}' "$OUT_DIR" "$FPS" "$FMT"
-    ;;
-
-  status)
-    f="$DIR/start"
-    if [ ! -f "$f" ]; then
-      # idle: camera icon in the theme color, no label
-      printf '{"icon":"camera-video","text":""}'
-      exit 0
-    fi
-    s="$(cat "$f")"
-    now="$(date +%s)"
-    e=$((now - s))
-    # while recording, the bar widget colors the camera icon red based on text != ""
-    printf '{"icon":"camera-video","text":"REC %d:%02d"}' \
-      "$((e / 60))" "$((e % 60))"
-    ;;
-
-  deps)
-    # report missing external tools so the bar widget can warn the user.
-    # required: recording is impossible without them; optional: degraded UX.
-    req="grim slurp ffmpeg"
-    opt="ydotool notify-send"
-    miss=""
-    for t in $req; do
-      command -v "$t" >/dev/null 2>&1 || miss="$miss\"$t\","
-    done
-    omiss=""
-    for t in $opt; do
-      command -v "$t" >/dev/null 2>&1 || omiss="$omiss\"$t\","
-    done
-    printf '{"missing":[%s],"optionalMissing":[%s]}' "${miss%,}" "${omiss%,}"
-    ;;
-
-  hotkeys)
-    # read-only: show key combos bound to screenrec in the niri config
-    f="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
-    [ -f "$f" ] || f="$HOME/.config/niri/config.kdl"
-    if [ ! -f "$f" ]; then
-      echo "NOTFOUND"
-      exit 0
-    fi
-    grep -i 'screenrec' "$f" | grep -vE '^[[:space:]]*//' | while IFS= read -r line; do
-      key="$(printf '%s' "$line" | sed 's/{.*//' \
-            | sed -E 's/^[[:space:]]+//; s/^[[:space:]]*bind:[[:space:]]*//; s/[[:space:]].*//')"
-      act=run
-      case "$line" in
-        *screenrec*start*) act=start ;;
-        *screenrec*stop*)  act=stop ;;
-      esac
-      [ -n "$key" ] && printf '%s %s\n' "$key" "$act"
-    done
-    ;;
-
-  *)
-    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get|deps}" >&2
-    exit 1
-    ;;
 esac

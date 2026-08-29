@@ -3,6 +3,6 @@ import Quickshell
 import qs.Commons
 
 Item {
-  property var pluginApi: null
-  Component.onCompleted: { }
+    property var pluginApi: null
+    Component.onCompleted: { }
 }

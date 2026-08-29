@@ -182,11 +182,11 @@ Item {
       }
     ]
     onTriggered: action => {
-                   contextMenu.close()
-                   PanelService.closeContextMenu(screen)
-                   if (action === "widget-settings" && pluginApi) {
-                     BarService.openPluginSettings(screen, pluginApi.manifest)
-                   }
-                 }
+      contextMenu.close()
+      PanelService.closeContextMenu(screen)
+      if (action === "widget-settings" && pluginApi) {
+        BarService.openPluginSettings(screen, pluginApi.manifest)
+      }
+    }
   }
 }

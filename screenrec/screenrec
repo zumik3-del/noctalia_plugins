@@ -5,6 +5,7 @@
 #   screenrec start    pick a region (slurp) and start recording
 #   screenrec stop     stop recording
 #   screenrec status   print JSON for the bar widget (icon + text)
+#   screenrec deps     print JSON of missing required/optional tools
 #   screenrec capture  internal: background frame capture and MP4 assembly
 #
 # Environment:
@@ -181,6 +182,22 @@ case "$cmd" in
       "$((e / 60))" "$((e % 60))"
     ;;
 
+  deps)
+    # report missing external tools so the bar widget can warn the user.
+    # required: recording is impossible without them; optional: degraded UX.
+    req="grim slurp ffmpeg"
+    opt="ydotool notify-send"
+    miss=""
+    for t in $req; do
+      command -v "$t" >/dev/null 2>&1 || miss="$miss\"$t\","
+    done
+    omiss=""
+    for t in $opt; do
+      command -v "$t" >/dev/null 2>&1 || omiss="$omiss\"$t\","
+    done
+    printf '{"missing":[%s],"optionalMissing":[%s]}' "${miss%,}" "${omiss%,}"
+    ;;
+
   hotkeys)
     # read-only: show key combos bound to screenrec in the niri config
     f="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
@@ -202,7 +219,7 @@ case "$cmd" in
     ;;
 
   *)
-    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get}" >&2
+    echo "Usage: screenrec {start|stop|status|set|capture|hotkeys|get|deps}" >&2
     exit 1
     ;;
 esac

@@ -23,6 +23,9 @@ Item {
     property string monthlyRateLimitLabel: ""
     property string monthlyRateLimitResetAt: ""
 
+    property real secondaryDailyRemaining: -1
+    property real monthlyDailyRemaining: -1
+
     property string tierLabel: ""
     property string usageStatusText: ""
 
@@ -122,8 +125,15 @@ Item {
             root.secondaryRateLimitResetAt = weekly.resetInSec != null
                 ? root.formatResetTime(new Date(Date.now() + weekly.resetInSec * 1000).toISOString())
                 : "";
+            if (weekly.resetInSec != null) {
+                const days = Math.ceil(weekly.resetInSec / 86400);
+                root.secondaryDailyRemaining = (1 / days) - root.secondaryRateLimitPercent;
+            } else {
+                root.secondaryDailyRemaining = -1;
+            }
         } else {
             root.secondaryRateLimitPercent = -1;
+            root.secondaryDailyRemaining = -1;
         }
         if (monthly) {
             root.monthlyRateLimitPercent = (monthly.usagePercent ?? 0) / 100;
@@ -131,8 +141,15 @@ Item {
             root.monthlyRateLimitResetAt = monthly.resetInSec != null
                 ? root.formatResetTime(new Date(Date.now() + monthly.resetInSec * 1000).toISOString())
                 : "";
+            if (monthly.resetInSec != null) {
+                const days = Math.ceil(monthly.resetInSec / 86400);
+                root.monthlyDailyRemaining = (1 / days) - root.monthlyRateLimitPercent;
+            } else {
+                root.monthlyDailyRemaining = -1;
+            }
         } else {
             root.monthlyRateLimitPercent = -1;
+            root.monthlyDailyRemaining = -1;
         }
         const parts = [];
         if (rolling)

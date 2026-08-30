@@ -125,9 +125,9 @@ Item {
 
                 Repeater {
                     model: [
-                        { pct: "rateLimitPercent", label: "rateLimitLabel", reset: "rateLimitResetAt" },
-                        { pct: "secondaryRateLimitPercent", label: "secondaryRateLimitLabel", reset: "secondaryRateLimitResetAt" },
-                        { pct: "monthlyRateLimitPercent", label: "monthlyRateLimitLabel", reset: "monthlyRateLimitResetAt" }
+                        { pct: "rateLimitPercent", label: "rateLimitLabel", reset: "rateLimitResetAt", daily: "" },
+                        { pct: "secondaryRateLimitPercent", label: "secondaryRateLimitLabel", reset: "secondaryRateLimitResetAt", daily: "secondaryDailyRemaining" },
+                        { pct: "monthlyRateLimitPercent", label: "monthlyRateLimitLabel", reset: "monthlyRateLimitResetAt", daily: "monthlyDailyRemaining" }
                     ]
                     delegate: Rectangle {
                         Layout.fillWidth: true
@@ -193,11 +193,31 @@ Item {
                                 }
                             }
 
-                            NText {
-                                visible: (root.selectedProvider?.[modelData.reset] ?? "") !== ""
-                                text: "Resets in " + (root.selectedProvider?.[modelData.reset] ?? "")
-                                pointSize: Style.fontSizeXS
-                                color: Color.mOnSurfaceVariant
+                            RowLayout {
+                                visible: (root.selectedProvider?.[modelData.reset] ?? "") !== "" || (modelData.daily !== "" && (root.selectedProvider?.[modelData.daily] ?? -1) >= -1)
+                                Layout.fillWidth: true
+
+                                NText {
+                                    text: "Resets in " + (root.selectedProvider?.[modelData.reset] ?? "")
+                                    visible: (root.selectedProvider?.[modelData.reset] ?? "") !== ""
+                                    pointSize: Style.fontSizeXS
+                                    color: Color.mOnSurfaceVariant
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                NText {
+                                    visible: modelData.daily !== "" && (root.selectedProvider?.[modelData.daily] ?? -1) >= -1
+                                    text: {
+                                        const d = root.selectedProvider?.[modelData.daily] ?? -1;
+                                        if (d < -1)
+                                            return "";
+                                        return FormatUtils.formatDaily(d);
+                                    }
+                                    pointSize: Style.fontSizeXS
+                                    font.weight: Style.fontWeightSemiBold
+                                    color: (root.selectedProvider?.[modelData.daily] ?? 0) >= 0 ? Color.mPrimary : Color.mError
+                                }
                             }
                         }
                     }

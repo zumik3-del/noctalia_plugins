@@ -127,7 +127,7 @@ Item {
                 : "";
             if (weekly.resetInSec != null) {
                 const days = Math.ceil(weekly.resetInSec / 86400);
-                root.secondaryDailyRemaining = (1 / days) - root.secondaryRateLimitPercent;
+                root.secondaryDailyRemaining = (1 - root.secondaryRateLimitPercent) / days;
             } else {
                 root.secondaryDailyRemaining = -1;
             }
@@ -143,7 +143,7 @@ Item {
                 : "";
             if (monthly.resetInSec != null) {
                 const days = Math.ceil(monthly.resetInSec / 86400);
-                root.monthlyDailyRemaining = (1 / days) - root.monthlyRateLimitPercent;
+                root.monthlyDailyRemaining = (1 - root.monthlyRateLimitPercent) / days;
             } else {
                 root.monthlyDailyRemaining = -1;
             }

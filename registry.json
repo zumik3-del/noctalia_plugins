@@ -14,7 +14,7 @@
       "id": "opencode-go-usage",
       "name": "Opencode Go Usage",
       "description": "Shows Opencode Go AI coding assistant usage limits",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "author": "zumik3-del",
       "tags": ["Bar", "Productivity", "AI"],
       "official": false,

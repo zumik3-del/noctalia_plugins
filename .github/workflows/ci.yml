@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  validate-json:
+    name: Validate JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JSON syntax
+        run: |
+          echo "Validating JSON files..."
+          errors=0
+          for f in registry.json screenrec/manifest.json opencode-go-usage/manifest.json opencode-go-usage/i18n/en.json; do
+            if [ -f "$f" ]; then
+              if python3 -c "import json; json.load(open('$f'))" 2>&1; then
+                echo "  OK: $f"
+              else
+                echo "  FAIL: $f"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "$errors JSON file(s) failed validation"
+            exit 1
+          fi
+          echo "All JSON files are valid"
+
+  bash-syntax:
+    name: Bash Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check bash syntax
+        run: |
+          echo "Checking bash scripts..."
+          errors=0
+          for f in screenrec/screenrec; do
+            if [ -f "$f" ]; then
+              if bash -n "$f" 2>&1; then
+                echo "  OK: $f"
+              else
+                echo "  FAIL: $f"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "$errors script(s) failed syntax check"
+            exit 1
+          fi
+          echo "All bash scripts are valid"
+
+  manifest-sync:
+    name: Manifest Sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check manifest/registry sync
+        run: python3 .github/workflows/check-sync.py

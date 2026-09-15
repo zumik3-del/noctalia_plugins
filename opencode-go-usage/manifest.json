@@ -1,7 +1,7 @@
 {
   "id": "opencode-go-usage",
   "name": "Opencode Go Usage",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "minNoctaliaVersion": "3.6.0",
   "author": "zumik3-del",
   "license": "MIT",
@@ -26,7 +26,7 @@
       "providers": {
         "opencodeGo": {
           "enabled": false,
-          "workspaceId": "",
+          "apiKey": "",
           "cookie": ""
         }
       },

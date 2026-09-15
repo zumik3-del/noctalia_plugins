@@ -30,7 +30,7 @@ Item {
     property string usageStatusText: ""
 
     property var providerSettings: ({})
-    property string workspaceId: providerSettings?.workspaceId ?? ""
+    property string apiKey: providerSettings?.apiKey ?? ""
     property string sessionCookie: providerSettings?.cookie ?? ""
 
     onEnabledChanged: {
@@ -60,115 +60,127 @@ Item {
         fetchUsage();
     }
 
+    function authHeader() {
+        if (root.apiKey !== "")
+            return "Authorization: Bearer " + root.apiKey;
+        if (root.sessionCookie !== "")
+            return "Cookie: __Host-console_session=" + root.sessionCookie
+                + "; console_session=" + root.sessionCookie
+                + "; auth=" + root.sessionCookie;
+        return "";
+    }
+
     function fetchUsage() {
-        if (!root.sessionCookie || !root.workspaceId) {
-            root.usageStatusText = "Set workspace ID + cookie in settings";
-            root.rateLimitPercent = -1;
-            root.secondaryRateLimitPercent = -1;
-            root.monthlyRateLimitPercent = -1;
-            root.updateState();
+        const header = root.authHeader();
+        if (header === "") {
+            root.failState("Set API key in settings");
             return;
         }
         usageProcess.command = [
             "curl", "-s", "--max-time", "20",
-            "-H", "Cookie: auth=" + root.sessionCookie,
-            "https://opencode.ai/console/" + root.workspaceId + "/go"
+            "-H", header,
+            "-H", "Accept: application/json",
+            "https://opencode.ai/console/api/go/status"
         ];
         usageProcess.running = true;
     }
 
+    function failState(message) {
+        root.usageStatusText = message;
+        root.rateLimitPercent = -1;
+        root.secondaryRateLimitPercent = -1;
+        root.monthlyRateLimitPercent = -1;
+        root.secondaryDailyRemaining = -1;
+        root.monthlyDailyRemaining = -1;
+        root.updateState();
+    }
+
+    function meterFraction(meter) {
+        if (!meter)
+            return -1;
+        const limit = Number(meter.limitMicroCents);
+        const used = Number(meter.usedMicroCents);
+        if (!isFinite(limit) || limit <= 0 || !isFinite(used))
+            return -1;
+        return Math.min(1, Math.max(0, used / limit));
+    }
+
     function parseUsage(body) {
-        function extractUsage(label) {
-            const idx = body.indexOf(label);
-            if (idx < 0)
-                return null;
-            const section = body.substring(idx, idx + 800);
-            const pm = section.match(/aria-valuenow="(\d+)"/);
-            if (!pm)
-                return null;
-            const pct = parseInt(pm[1], 10);
-            const tm = section.match(/title="([^"]+)"/);
-            const resetText = tm ? tm[1] : "";
-            return { percent: pct, resetText: resetText };
+        let data = null;
+        try {
+            data = JSON.parse(body);
+        } catch (e) {
+            data = null;
         }
 
-        const rolling = extractUsage("Rolling usage");
-        const weekly = extractUsage("Weekly usage");
-        const monthly = extractUsage("Monthly usage");
-
-        if (!rolling && !weekly && !monthly) {
-            root.usageStatusText = "No usage data in page (not authed?)";
-            root.rateLimitPercent = -1;
-            root.secondaryRateLimitPercent = -1;
-            root.monthlyRateLimitPercent = -1;
-            root.updateState();
+        if (!data || data._tag || !data.access || !data.access.meters) {
+            root.failState("Usage unavailable (check API key)");
             return;
         }
 
-        if (rolling) {
-            root.rateLimitPercent = rolling.percent / 100;
-            root.rateLimitLabel = "5-hour Usage";
-            root.rateLimitResetAt = rolling.resetText;
-        } else {
-            root.rateLimitPercent = -1;
-        }
+        const meters = data.access.meters;
+        const fiveHour = meters.fiveHour ?? null;
+        const week = meters.week ?? null;
+        const month = meters.month ?? null;
+        const periodEnd = data.access?.endsAt ?? "";
 
-        if (weekly) {
-            root.secondaryRateLimitPercent = weekly.percent / 100;
-            root.secondaryRateLimitLabel = "Weekly Usage";
-            root.secondaryRateLimitResetAt = weekly.resetText;
-            const rds = root.parseResetDuration(weekly.resetText);
-            root.secondaryDailyRemaining = rds >= 0
-                ? (1 - root.secondaryRateLimitPercent) / Math.max(1, Math.ceil(rds / 86400))
-                : -1;
-        } else {
-            root.secondaryRateLimitPercent = -1;
-            root.secondaryDailyRemaining = -1;
-        }
+        root.rateLimitPercent = meterFraction(fiveHour);
+        root.rateLimitLabel = "5-hour Usage";
+        root.rateLimitResetAt = formatResetLine(fiveHour?.resetsAt);
 
-        if (monthly) {
-            root.monthlyRateLimitPercent = monthly.percent / 100;
-            root.monthlyRateLimitLabel = "Monthly Usage";
-            root.monthlyRateLimitResetAt = monthly.resetText;
-            const rds = root.parseResetDuration(monthly.resetText);
-            root.monthlyDailyRemaining = rds >= 0
-                ? (1 - root.monthlyRateLimitPercent) / Math.max(1, Math.ceil(rds / 86400))
-                : -1;
-        } else {
-            root.monthlyRateLimitPercent = -1;
-            root.monthlyDailyRemaining = -1;
-        }
+        root.secondaryRateLimitPercent = meterFraction(week);
+        root.secondaryRateLimitLabel = "Weekly Usage";
+        root.secondaryRateLimitResetAt = formatResetLine(week?.resetsAt);
+        root.secondaryDailyRemaining = dailyRemaining(root.secondaryRateLimitPercent, week?.resetsAt);
+
+        root.monthlyRateLimitPercent = meterFraction(month);
+        root.monthlyRateLimitLabel = "Monthly Usage";
+        root.monthlyRateLimitResetAt = formatResetLine(periodEnd);
+        root.monthlyDailyRemaining = dailyRemaining(root.monthlyRateLimitPercent, periodEnd);
+
+        root.tierLabel = data.cancelAtPeriodEnd ? "Cancelling" : "Active";
 
         const parts = [];
-        if (rolling)
-            parts.push("5h " + rolling.percent + "%");
-        if (weekly)
-            parts.push("week " + weekly.percent + "%");
-        if (monthly)
-            parts.push("month " + monthly.percent + "%");
+        if (fiveHour)
+            parts.push("5h " + pctInt(root.rateLimitPercent));
+        if (week)
+            parts.push("week " + pctInt(root.secondaryRateLimitPercent));
+        if (month)
+            parts.push("month " + pctInt(root.monthlyRateLimitPercent));
         root.usageStatusText = parts.join(" \u00b7 ");
         root.updateState();
     }
 
-    function parseResetDuration(text) {
-        if (!text)
+    function pctInt(fraction) {
+        if (!(fraction >= 0))
+            return "0";
+        return String(Math.round(fraction * 100));
+    }
+
+    function formatResetLine(isoTimestamp) {
+        const text = formatResetTime(isoTimestamp);
+        return text === "" ? "" : "Resets in " + text;
+    }
+
+    function dailyRemaining(fraction, isoTimestamp) {
+        if (!(fraction >= 0) || !isoTimestamp)
             return -1;
-        let total = 0;
-        const dm = text.match(/(\d+)\s*d/);
-        const hm = text.match(/(\d+)\s*h/);
-        const mm = text.match(/(\d+)\s*m/);
-        if (dm) total += parseInt(dm[1], 10) * 86400;
-        if (hm) total += parseInt(hm[1], 10) * 3600;
-        if (mm) total += parseInt(mm[1], 10) * 60;
-        return total > 0 ? total : -1;
+        const reset = new Date(isoTimestamp).getTime();
+        if (!isFinite(reset))
+            return -1;
+        const secs = (reset - Date.now()) / 1000;
+        if (secs <= 0)
+            return -1;
+        return (1 - fraction) / Math.max(1, Math.ceil(secs / 86400));
     }
 
     function formatResetTime(isoTimestamp) {
         if (!isoTimestamp)
             return "";
         const reset = new Date(isoTimestamp);
-        const now = new Date();
-        const diffMs = reset.getTime() - now.getTime();
+        if (isNaN(reset.getTime()))
+            return "";
+        const diffMs = reset.getTime() - Date.now();
         if (diffMs <= 0)
             return "now";
         const hours = Math.floor(diffMs / 3600000);

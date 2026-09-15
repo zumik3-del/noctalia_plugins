@@ -179,23 +179,6 @@ ColumnLayout {
                         root.saveSettings();
                     }
                 }
-
-                NTextInput {
-                    visible: editSettings?.providers?.opencodeGo?.enabled ?? false
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Style.marginXL
-                    placeholderText: "Session cookie (optional fallback)"
-                    text: editSettings?.providers?.opencodeGo?.cookie ?? ""
-
-                    onTextChanged: {
-                        if (!editSettings.providers)
-                            editSettings.providers = {};
-                        if (!editSettings.providers.opencodeGo)
-                            editSettings.providers.opencodeGo = {};
-                        editSettings.providers.opencodeGo.cookie = text;
-                        root.saveSettings();
-                    }
-                }
             }
         }
     }

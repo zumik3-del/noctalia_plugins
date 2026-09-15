@@ -31,7 +31,6 @@ Item {
 
     property var providerSettings: ({})
     property string apiKey: providerSettings?.apiKey ?? ""
-    property string sessionCookie: providerSettings?.cookie ?? ""
 
     onEnabledChanged: {
         if (enabled)
@@ -60,25 +59,14 @@ Item {
         fetchUsage();
     }
 
-    function authHeader() {
-        if (root.apiKey !== "")
-            return "Authorization: Bearer " + root.apiKey;
-        if (root.sessionCookie !== "")
-            return "Cookie: __Host-console_session=" + root.sessionCookie
-                + "; console_session=" + root.sessionCookie
-                + "; auth=" + root.sessionCookie;
-        return "";
-    }
-
     function fetchUsage() {
-        const header = root.authHeader();
-        if (header === "") {
+        if (root.apiKey === "") {
             root.failState("Set API key in settings");
             return;
         }
         usageProcess.command = [
             "curl", "-s", "--max-time", "20",
-            "-H", header,
+            "-H", "Authorization: Bearer " + root.apiKey,
             "-H", "Accept: application/json",
             "https://opencode.ai/console/api/go/status"
         ];

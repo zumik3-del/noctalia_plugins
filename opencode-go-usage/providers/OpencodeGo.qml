@@ -72,36 +72,30 @@ Item {
         usageProcess.command = [
             "curl", "-s", "--max-time", "20",
             "-H", "Cookie: auth=" + root.sessionCookie,
-            "https://opencode.ai/workspace/" + root.workspaceId + "/go"
+            "https://opencode.ai/console/" + root.workspaceId + "/go"
         ];
         usageProcess.running = true;
     }
 
     function parseUsage(body) {
-        function grab(key) {
-            const m = body.match(new RegExp(key + ":\\$R\\[\\d+\\]=\\{([^}]*)\\}"));
-            if (!m)
+        function extractUsage(label) {
+            const idx = body.indexOf(label);
+            if (idx < 0)
                 return null;
-            const obj = {};
-            const pairs = m[1].split(",");
-            for (let i = 0; i < pairs.length; i++) {
-                const colon = pairs[i].indexOf(":");
-                if (colon < 0)
-                    continue;
-                const k = pairs[i].slice(0, colon).trim();
-                let v = pairs[i].slice(colon + 1).trim();
-                if (v === "null")
-                    obj[k] = null;
-                else if (v[0] === '"')
-                    obj[k] = v.slice(1, -1);
-                else
-                    obj[k] = parseFloat(v);
-            }
-            return obj;
+            const section = body.substring(idx, idx + 800);
+            const pm = section.match(/aria-valuenow="(\d+)"/);
+            if (!pm)
+                return null;
+            const pct = parseInt(pm[1], 10);
+            const tm = section.match(/title="([^"]+)"/);
+            const resetText = tm ? tm[1] : "";
+            return { percent: pct, resetText: resetText };
         }
-        const rolling = grab("rollingUsage");
-        const weekly = grab("weeklyUsage");
-        const monthly = grab("monthlyUsage");
+
+        const rolling = extractUsage("Rolling usage");
+        const weekly = extractUsage("Weekly usage");
+        const monthly = extractUsage("Monthly usage");
+
         if (!rolling && !weekly && !monthly) {
             root.usageStatusText = "No usage data in page (not authed?)";
             root.rateLimitPercent = -1;
@@ -110,56 +104,63 @@ Item {
             root.updateState();
             return;
         }
+
         if (rolling) {
-            root.rateLimitPercent = (rolling.usagePercent ?? 0) / 100;
+            root.rateLimitPercent = rolling.percent / 100;
             root.rateLimitLabel = "5-hour Usage";
-            root.rateLimitResetAt = rolling.resetInSec != null
-                ? root.formatResetTime(new Date(Date.now() + rolling.resetInSec * 1000).toISOString())
-                : "";
+            root.rateLimitResetAt = rolling.resetText;
         } else {
             root.rateLimitPercent = -1;
         }
+
         if (weekly) {
-            root.secondaryRateLimitPercent = (weekly.usagePercent ?? 0) / 100;
+            root.secondaryRateLimitPercent = weekly.percent / 100;
             root.secondaryRateLimitLabel = "Weekly Usage";
-            root.secondaryRateLimitResetAt = weekly.resetInSec != null
-                ? root.formatResetTime(new Date(Date.now() + weekly.resetInSec * 1000).toISOString())
-                : "";
-            if (weekly.resetInSec != null) {
-                const days = Math.ceil(weekly.resetInSec / 86400);
-                root.secondaryDailyRemaining = (1 - root.secondaryRateLimitPercent) / days;
-            } else {
-                root.secondaryDailyRemaining = -1;
-            }
+            root.secondaryRateLimitResetAt = weekly.resetText;
+            const rds = root.parseResetDuration(weekly.resetText);
+            root.secondaryDailyRemaining = rds >= 0
+                ? (1 - root.secondaryRateLimitPercent) / Math.max(1, Math.ceil(rds / 86400))
+                : -1;
         } else {
             root.secondaryRateLimitPercent = -1;
             root.secondaryDailyRemaining = -1;
         }
+
         if (monthly) {
-            root.monthlyRateLimitPercent = (monthly.usagePercent ?? 0) / 100;
+            root.monthlyRateLimitPercent = monthly.percent / 100;
             root.monthlyRateLimitLabel = "Monthly Usage";
-            root.monthlyRateLimitResetAt = monthly.resetInSec != null
-                ? root.formatResetTime(new Date(Date.now() + monthly.resetInSec * 1000).toISOString())
-                : "";
-            if (monthly.resetInSec != null) {
-                const days = Math.ceil(monthly.resetInSec / 86400);
-                root.monthlyDailyRemaining = (1 - root.monthlyRateLimitPercent) / days;
-            } else {
-                root.monthlyDailyRemaining = -1;
-            }
+            root.monthlyRateLimitResetAt = monthly.resetText;
+            const rds = root.parseResetDuration(monthly.resetText);
+            root.monthlyDailyRemaining = rds >= 0
+                ? (1 - root.monthlyRateLimitPercent) / Math.max(1, Math.ceil(rds / 86400))
+                : -1;
         } else {
             root.monthlyRateLimitPercent = -1;
             root.monthlyDailyRemaining = -1;
         }
+
         const parts = [];
         if (rolling)
-            parts.push("5h " + rolling.usagePercent + "%");
+            parts.push("5h " + rolling.percent + "%");
         if (weekly)
-            parts.push("week " + weekly.usagePercent + "%");
+            parts.push("week " + weekly.percent + "%");
         if (monthly)
-            parts.push("month " + monthly.usagePercent + "%");
-        root.usageStatusText = parts.join(" · ");
+            parts.push("month " + monthly.percent + "%");
+        root.usageStatusText = parts.join(" \u00b7 ");
         root.updateState();
+    }
+
+    function parseResetDuration(text) {
+        if (!text)
+            return -1;
+        let total = 0;
+        const dm = text.match(/(\d+)\s*d/);
+        const hm = text.match(/(\d+)\s*h/);
+        const mm = text.match(/(\d+)\s*m/);
+        if (dm) total += parseInt(dm[1], 10) * 86400;
+        if (hm) total += parseInt(hm[1], 10) * 3600;
+        if (mm) total += parseInt(mm[1], 10) * 60;
+        return total > 0 ? total : -1;
     }
 
     function formatResetTime(isoTimestamp) {

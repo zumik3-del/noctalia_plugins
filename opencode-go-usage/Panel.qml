@@ -198,7 +198,7 @@ Item {
                                 Layout.fillWidth: true
 
                                 NText {
-                                    text: "Resets in " + (root.selectedProvider?.[modelData.reset] ?? "")
+                                    text: root.selectedProvider?.[modelData.reset] ?? ""
                                     visible: (root.selectedProvider?.[modelData.reset] ?? "") !== ""
                                     pointSize: Style.fontSizeXS
                                     color: Color.mOnSurfaceVariant

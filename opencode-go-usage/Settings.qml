@@ -167,32 +167,15 @@ ColumnLayout {
                     visible: editSettings?.providers?.opencodeGo?.enabled ?? false
                     Layout.fillWidth: true
                     Layout.leftMargin: Style.marginXL
-                    placeholderText: "Workspace ID, e.g. wrk_XXXXXXXXXXXXXXXXXXXXXXXX"
-                    text: editSettings?.providers?.opencodeGo?.workspaceId ?? ""
+                    placeholderText: "API key, e.g. oc_sk_..."
+                    text: editSettings?.providers?.opencodeGo?.apiKey ?? ""
 
                     onTextChanged: {
                         if (!editSettings.providers)
                             editSettings.providers = {};
                         if (!editSettings.providers.opencodeGo)
                             editSettings.providers.opencodeGo = {};
-                        editSettings.providers.opencodeGo.workspaceId = text;
-                        root.saveSettings();
-                    }
-                }
-
-                NTextInput {
-                    visible: editSettings?.providers?.opencodeGo?.enabled ?? false
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Style.marginXL
-                    placeholderText: "Session cookie (Cookie header value, auth=...)"
-                    text: editSettings?.providers?.opencodeGo?.cookie ?? ""
-
-                    onTextChanged: {
-                        if (!editSettings.providers)
-                            editSettings.providers = {};
-                        if (!editSettings.providers.opencodeGo)
-                            editSettings.providers.opencodeGo = {};
-                        editSettings.providers.opencodeGo.cookie = text;
+                        editSettings.providers.opencodeGo.apiKey = text;
                         root.saveSettings();
                     }
                 }

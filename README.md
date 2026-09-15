@@ -37,17 +37,17 @@ The following system tools must be installed:
 ## Opencode Go Usage
 
 Shows Opencode Go (Zen) AI usage limits in the bar: **5h / weekly / monthly** percentages,
-scraped from the opencode.ai console via your session cookie.
+fetched from the opencode.ai console JSON API (`GET https://opencode.ai/console/api/go/status`).
 
-In plugin settings → enable **Opencode Go**, then:
-- **Workspace ID** — from the console URL `https://opencode.ai/workspace/<id>/go`.
-- **Session cookie** — copy the `auth` cookie value from browser devtools; it expires on logout.
+In plugin settings → enable **Opencode Go**, then paste your Opencode API key (`oc_sk_...`).
+The key is sent as a `Bearer` token in the `Authorization` header.
 
 ### Requirements
 The following system tools must be installed:
-- `curl` — fetches the opencode.ai console page locally (QML can't send `Cookie` headers directly).
+- `curl` — fetches the API locally (QML can't send an `Authorization` header directly).
 
-You also need an Opencode Go (Zen) account and a valid session cookie from `opencode.ai`.
+You also need an Opencode Go (Zen) account and an API key.
 
-Notes: QML can't send `Cookie` headers, so a local `curl` is used. The data comes from the
-console page HTML and may break if opencode.ai changes its format.
+Notes: usage is read from `access.meters.fiveHour` / `.week` / `.month`
+(`usedMicroCents` / `limitMicroCents`), with reset times from `resetsAt` (the monthly limit
+uses `access.endsAt`). This JSON API may break if opencode.ai changes it.

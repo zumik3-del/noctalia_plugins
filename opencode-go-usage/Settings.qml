@@ -62,9 +62,11 @@ ColumnLayout {
                 NComboBox {
                     Layout.fillWidth: true
                     model: [
+                        { key: "900", name: "15 minutes" },
                         { key: "1800", name: "30 minutes" },
                         { key: "3600", name: "1 hour" },
-                        { key: "10800", name: "3 hours" }
+                        { key: "10800", name: "3 hours" },
+                        { key: "21600", name: "6 hours" }
                     ]
                     currentKey: String(editSettings?.refreshIntervalSec ?? 1800)
                     onSelected: key => {

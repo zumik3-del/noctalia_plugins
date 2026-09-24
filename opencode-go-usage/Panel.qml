@@ -11,12 +11,12 @@ Item {
     property var pluginApi: null
     property var mainInstance: pluginApi?.mainInstance
     readonly property color sectionBackgroundColor: Color.mSurfaceVariant
-    readonly property color usageWarnColor: Qt.alpha(Color.mError, 0.72)
+    readonly property color usageWarnColor: "#F5A623"
 
     function limitColor(fraction) {
-        if (fraction >= 0.9)
+        if (fraction >= 0.97 || fraction > 1.0)
             return Color.mError;
-        if (fraction >= 0.7)
+        if (fraction >= 0.70)
             return root.usageWarnColor;
         return Color.mPrimary;
     }

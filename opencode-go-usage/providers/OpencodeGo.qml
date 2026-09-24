@@ -90,7 +90,7 @@ Item {
         const used = Number(meter.usedMicroCents);
         if (!isFinite(limit) || limit <= 0 || !isFinite(used))
             return -1;
-        return Math.min(1, Math.max(0, used / limit));
+        return Math.max(0, used / limit);
     }
 
     function parseUsage(body) {

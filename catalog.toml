@@ -19,5 +19,5 @@ license = "MIT"
 icon = "brand-openai"
 description = "Opencode Go usage limits in the bar, with a details panel for the 5-hour, weekly and monthly meters."
 deprecated = false
-plugin_api = 32
+plugin_api = 28
 tags = ["bar", "panel", "service", "ai", "productivity", "indicator"]

@@ -1,0 +1,3 @@
+[plugins.opencode-go-usage-v5]
+repo = "https://github.com/zumik3-del/noctalia_plugins"
+path = "opencode-go-usage-v5"

@@ -9,7 +9,7 @@
 --
 -- The widget owns no polling logic: it only reflects the shared "usage" state.
 
-local PLUGIN_ID = "zumik3-del/opencode-go-usage-v5"
+local PLUGIN_ID = "zumik3-del/opencode-go-usage"
 local GLYPH = "brand-openai"
 
 local usage = noctalia.state.get("usage")

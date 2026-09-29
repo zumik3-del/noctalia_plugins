@@ -1,12 +1,12 @@
-id = "zumik3-del/opencode-go-usage-v5"
+id = "zumik3-del/opencode-go-usage"
 name = "Opencode Go Usage"
-version = "1.0.2"
-plugin_api = 3
+version = "1.1.0"
+plugin_api = 32
 author = "zumik3-del"
 license = "MIT"
 icon = "brand-openai"
-description = "Shows Opencode Go AI coding assistant usage limits"
-tags = ["bar", "productivity", "ai"]
+description = "Opencode Go usage limits in the bar, with a details panel for the 5-hour, weekly and monthly meters."
+tags = ["bar", "panel", "service", "ai", "productivity", "indicator"]
 
 # Plugin-level settings: one shared set, edited in Settings -> Plugins, readable
 # from every entry via noctalia.getConfig(key).

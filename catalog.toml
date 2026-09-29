@@ -9,15 +9,15 @@
 # On every row, updated_at dates the commit that first shipped that row's version.
 
 [[plugin]]
-id = "zumik3-del/opencode-go-usage-v5"
+id = "zumik3-del/opencode-go-usage"
 name = "Opencode Go Usage"
-version = "1.0.2"
+version = "1.1.0"
 updated_at = 1759000000
 added_at = 1759000000
 author = "zumik3-del"
 license = "MIT"
 icon = "brand-openai"
-description = "Shows Opencode Go AI coding assistant usage limits (Noctalia v5 Luau)"
+description = "Opencode Go usage limits in the bar, with a details panel for the 5-hour, weekly and monthly meters."
 deprecated = false
-plugin_api = 3
-tags = ["bar", "productivity", "ai"]
+plugin_api = 32
+tags = ["bar", "panel", "service", "ai", "productivity", "indicator"]

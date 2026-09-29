@@ -1,32 +1,12 @@
 {
   "plugins": [
     {
-      "id": "screenrec",
-      "name": "ScreenRec",
-      "description": "Simple screen recorder for Wayland.",
-      "version": "1.3.4",
-      "author": "zumik3-del",
-      "tags": ["Bar", "Utility", "Screen Recording"],
-      "official": false,
-      "minNoctaliaVersion": "3.0.0"
-    },
-    {
       "id": "opencode-go-usage",
       "name": "Opencode Go Usage",
-      "description": "Shows Opencode Go AI coding assistant usage limits",
-      "version": "0.3.6",
+      "description": "Opencode Go usage limits in the bar, with a details panel for the 5-hour, weekly and monthly meters.",
+      "version": "1.1.0",
       "author": "zumik3-del",
-      "tags": ["Bar", "Productivity", "AI"],
-      "official": false,
-      "minNoctaliaVersion": "3.6.0"
-    },
-    {
-      "id": "opencode-go-usage-v5",
-      "name": "Opencode Go Usage v5",
-      "description": "Shows Opencode Go AI coding assistant usage limits (Noctalia v5 Luau)",
-      "version": "1.0.2",
-      "author": "zumik3-del",
-      "tags": ["Bar", "Productivity", "AI"],
+      "tags": ["Bar", "Panel", "Service", "AI", "Productivity", "Indicator"],
       "official": false,
       "minNoctaliaVersion": "5.0.0"
     }

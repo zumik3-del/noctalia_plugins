@@ -1,36 +1,16 @@
 {
   "id": "opencode-go-usage",
   "name": "Opencode Go Usage",
-  "version": "0.3.6",
-  "minNoctaliaVersion": "3.6.0",
+  "description": "Opencode Go usage limits in the bar, with a details panel for the 5-hour, weekly and monthly meters.",
+  "version": "1.1.0",
   "author": "zumik3-del",
-  "license": "MIT",
-  "repository": "https://github.com/zumik3-del/noctalia_plugins",
-  "description": "Shows Opencode Go AI coding assistant usage limits",
   "tags": [
     "Bar",
+    "Panel",
+    "Service",
+    "AI",
     "Productivity",
-    "AI"
+    "Indicator"
   ],
-  "entryPoints": {
-    "main": "Main.qml",
-    "barWidget": "BarWidget.qml",
-    "panel": "Panel.qml",
-    "settings": "Settings.qml"
-  },
-  "dependencies": {
-    "plugins": []
-  },
-  "metadata": {
-    "defaultSettings": {
-      "providers": {
-        "opencodeGo": {
-          "enabled": false,
-          "apiKey": ""
-        }
-      },
-      "barLimit": "5h",
-      "refreshIntervalSec": 1800
-    }
-  }
+  "minNoctaliaVersion": "5.0.0"
 }

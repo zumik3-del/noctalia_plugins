@@ -34,15 +34,13 @@ local function limitColor(fraction: number): string
 	return "primary"
 end
 
-function update()
-	local usage = noctalia.state.get("usage") or {}
+local usage = noctalia.state.get("usage") or {}
 
+local function render()
 	if not usage or next(usage) == nil then
-		panel.render({
-			ui.box {
-				ui.text { text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" },
-			},
-		})
+		panel.render(ui.column({ gap = 12, padding = 16 }, {
+			ui.label({ text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" }),
+		}))
 		return
 	end
 
@@ -53,100 +51,100 @@ function update()
 	local hasAnyLimit = pct5h >= 0 or pctWeek >= 0 or pctMonth >= 0
 
 	if not hasAnyLimit and (usage.usageStatusText or "") == "" then
-		panel.render({
-			ui.box {
-				ui.text { text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" },
-			},
-		})
+		panel.render(ui.column({ gap = 12, padding = 16 }, {
+			ui.label({ text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" }),
+		}))
 		return
 	end
 
 	local children = {}
 
-	table.insert(children, ui.row {
-		ui.text { text = "Usage limits", size = "xl", weight = "bold" },
-		ui.spacer {},
+	table.insert(children, ui.row({ align = "center", justify = "space_between", gap = 8 }, {
+		ui.label({ text = "Usage limits", fontSize = 16, fontWeight = "bold", color = "on_surface" }),
 		if (usage.tierLabel or "") ~= "" then
-			ui.box {
-				ui.text { text = usage.tierLabel, size = "s", weight = "semibold", color = "primary" },
-			}
+			ui.box({ fill = "primary/0.15", radius = 8, paddingH = 12, paddingV = 4 }, {
+				ui.label({ text = usage.tierLabel, fontSize = 12, fontWeight = "semibold", color = "primary" }),
+			})
 		else nil,
-	})
+	}))
 
 	if not hasAnyLimit and (usage.usageStatusText or "") ~= "" then
-		table.insert(children, ui.box {
-			ui.text { text = usage.usageStatusText, color = "error", weight = "semibold" },
-		})
+		table.insert(children, ui.box({ fill = "error/0.12", radius = 8, padding = 12 }, {
+			ui.label({ text = usage.usageStatusText, color = "error", fontWeight = "semibold" }),
+		}))
 	end
 
 	if pct5h >= 0 then
-		table.insert(children, ui.box {
-			ui.row {
-				ui.text { text = usage.rateLimitLabel or "5-hour Usage", size = "s", color = "surface_variant" },
-				ui.spacer {},
-				ui.text { text = formatPct(pct5h), size = "s", weight = "bold", color = limitColor(pct5h) },
-			},
-			ui.progress { value = math.min(1.0, math.max(0, pct5h)), color = limitColor(pct5h) },
-			ui.row {
+		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
+			ui.row({ justify = "space_between" }, {
+				ui.label({ text = usage.rateLimitLabel or "5-hour Usage", fontSize = 12, color = "surface_variant" }),
+				ui.label({ text = formatPct(pct5h), fontSize = 12, fontWeight = "bold", color = limitColor(pct5h) }),
+			}),
+			ui.progress({ progress = math.min(1.0, math.max(0, pct5h)), fill = limitColor(pct5h), height = 8, radius = 4 }),
+			ui.row({ justify = "space_between" }, {
 				if (usage.rateLimitResetAt or "") ~= "" then
-					ui.text { text = usage.rateLimitResetAt, size = "xs", color = "surface_variant" }
+					ui.label({ text = usage.rateLimitResetAt, fontSize = 10, color = "surface_variant" })
 				else nil,
-				ui.spacer {},
-			},
-		})
+			}),
+		}))
 	end
 
 	if pctWeek >= 0 then
-		table.insert(children, ui.box {
-			ui.row {
-				ui.text { text = usage.secondaryRateLimitLabel or "Weekly Usage", size = "s", color = "surface_variant" },
-				ui.spacer {},
-				ui.text { text = formatPct(pctWeek), size = "s", weight = "bold", color = limitColor(pctWeek) },
-			},
-			ui.progress { value = math.min(1.0, math.max(0, pctWeek)), color = limitColor(pctWeek) },
-			ui.row {
+		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
+			ui.row({ justify = "space_between" }, {
+				ui.label({ text = usage.secondaryRateLimitLabel or "Weekly Usage", fontSize = 12, color = "surface_variant" }),
+				ui.label({ text = formatPct(pctWeek), fontSize = 12, fontWeight = "bold", color = limitColor(pctWeek) }),
+			}),
+			ui.progress({ progress = math.min(1.0, math.max(0, pctWeek)), fill = limitColor(pctWeek), height = 8, radius = 4 }),
+			ui.row({ justify = "space_between" }, {
 				if (usage.secondaryRateLimitResetAt or "") ~= "" then
-					ui.text { text = usage.secondaryRateLimitResetAt, size = "xs", color = "surface_variant" }
+					ui.label({ text = usage.secondaryRateLimitResetAt, fontSize = 10, color = "surface_variant" })
 				else nil,
-				ui.spacer {},
 				if (usage.secondaryDailyRemaining or -1) >= -1 then
-					ui.text {
+					ui.label({
 						text = formatDaily(usage.secondaryDailyRemaining or 0),
-						size = "xs",
-						weight = "semibold",
+						fontSize = 10,
+						fontWeight = "semibold",
 						color = (usage.secondaryDailyRemaining or 0) >= 0 and "primary" or "error",
-					}
+					})
 				else nil,
-			},
-		})
+			}),
+		}))
 	end
 
 	if pctMonth >= 0 then
-		table.insert(children, ui.box {
-			ui.row {
-				ui.text { text = usage.monthlyRateLimitLabel or "Monthly Usage", size = "s", color = "surface_variant" },
-				ui.spacer {},
-				ui.text { text = formatPct(pctMonth), size = "s", weight = "bold", color = limitColor(pctMonth) },
-			},
-			ui.progress { value = math.min(1.0, math.max(0, pctMonth)), color = limitColor(pctMonth) },
-			ui.row {
+		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
+			ui.row({ justify = "space_between" }, {
+				ui.label({ text = usage.monthlyRateLimitLabel or "Monthly Usage", fontSize = 12, color = "surface_variant" }),
+				ui.label({ text = formatPct(pctMonth), fontSize = 12, fontWeight = "bold", color = limitColor(pctMonth) }),
+			}),
+			ui.progress({ progress = math.min(1.0, math.max(0, pctMonth)), fill = limitColor(pctMonth), height = 8, radius = 4 }),
+			ui.row({ justify = "space_between" }, {
 				if (usage.monthlyRateLimitResetAt or "") ~= "" then
-					ui.text { text = usage.monthlyRateLimitResetAt, size = "xs", color = "surface_variant" }
+					ui.label({ text = usage.monthlyRateLimitResetAt, fontSize = 10, color = "surface_variant" })
 				else nil,
-				ui.spacer {},
 				if (usage.monthlyDailyRemaining or -1) >= -1 then
-					ui.text {
+					ui.label({
 						text = formatDaily(usage.monthlyDailyRemaining or 0),
-						size = "xs",
-						weight = "semibold",
+						fontSize = 10,
+						fontWeight = "semibold",
 						color = (usage.monthlyDailyRemaining or 0) >= 0 and "primary" or "error",
-					}
+					})
 				else nil,
-			},
-		})
+			}),
+		}))
 	end
 
 	table.insert(children, ui.spacer {})
 
-	panel.render(ui.column(children))
+	panel.render(ui.column({ gap = 12, padding = 16 }, children))
+end
+
+noctalia.state.watch("usage", function(value)
+	usage = value or {}
+	render()
+end)
+
+function onOpen(_context)
+	render()
 end

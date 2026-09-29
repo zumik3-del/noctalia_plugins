@@ -1,7 +1,5 @@
 --!nonstrict
 
-local json = require("@noctalia/json")
-
 local API_URL = "https://opencode.ai/console/api/go/status"
 
 local state = {
@@ -118,7 +116,7 @@ local function failState(message: string)
 end
 
 local function parseUsage(body: string)
-	local ok, data = pcall(json.decode, body)
+	local ok, data = pcall(noctalia.json.decode, body)
 	if not ok or not data or data._tag or not data.access or not data.access.meters then
 		failState("Usage unavailable (check API key)")
 		return
@@ -163,36 +161,35 @@ local function parseUsage(body: string)
 end
 
 local function fetchUsage()
-	local apiKey = noctalia.getSetting("zumik3-del/opencode-go-usage/usage.api_key") or ""
+	local apiKey = noctalia.getConfig("api_key") or ""
 	if apiKey == "" then
 		failState("Set API key in settings")
 		return
 	end
 
-	local args = {
-		"-s", "--max-time", "20",
-		"-H", "Authorization: Bearer " .. apiKey,
-		"-H", "Accept: application/json",
-		API_URL,
-	}
-
-	noctalia.runAsync("curl", args, function(code, stdout, stderr)
-		if code ~= 0 then
+	noctalia.http({
+		url = API_URL,
+		headers = {
+			["Authorization"] = "Bearer " .. apiKey,
+			["Accept"] = "application/json",
+		},
+	}, function(res)
+		if res.ok then
+			parseUsage(res.body)
+		else
 			failState("Usage unavailable (check API key)")
-			return
 		end
-		parseUsage(stdout)
 	end)
 end
 
 function update()
-	local interval = tonumber(noctalia.getSetting("zumik3-del/opencode-go-usage/bar.refresh_interval_sec")) or 1800
+	local interval = tonumber(noctalia.getConfig("refresh_interval_sec")) or 1800
 	noctalia.setUpdateInterval(interval * 1000)
 	fetchUsage()
 end
 
-function onIpc(op: string, payload: any)
-	if op == "refresh" then
+function onIpc(event: string, payload: any)
+	if event == "refresh" then
 		fetchUsage()
 	end
 end

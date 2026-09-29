@@ -205,5 +205,5 @@ end
 
 -- Top-level init: prime the tick rate and do the first fetch immediately, so the
 -- bar has data before the first scheduled tick.
-failState("Loading\u2026")
+failState("Loading\u{2026}")
 fetchUsage()

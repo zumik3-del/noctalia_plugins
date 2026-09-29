@@ -30,9 +30,11 @@ local function limitLabel(usage: any, mode: string): string
 	return usage.rateLimitLabel or "5h"
 end
 
-function update()
-	local usage = noctalia.state.get("usage") or {}
-	local mode = noctalia.getSetting("zumik3-del/opencode-go-usage/bar.bar_limit") or "5h"
+local usage = noctalia.state.get("usage") or {}
+local isVertical = false
+
+local function render()
+	local mode = noctalia.getConfig("bar_limit") or "5h"
 
 	local pct = barPercent(usage, mode)
 	local displayText
@@ -56,30 +58,37 @@ function update()
 		tooltipText = "Opencode Go Usage"
 	end
 
-	barWidget.render({
-		ui.box {
-			tooltip = tooltipText,
-			ui.row {
-				ui.icon { glyph = "ai", color = "primary" },
-				ui.text { text = displayText, weight = "semibold" },
-			},
-		},
-	})
+	barWidget.setTooltip(tooltipText)
+
+	if isVertical then
+		barWidget.render(ui.column({ align = "center" }, {
+			ui.glyph({ name = "ai", color = "primary" }),
+			ui.label({ text = displayText, fontWeight = "semibold", color = "on_surface" }),
+		}))
+	else
+		barWidget.render(ui.row({ gap = 6, align = "center" }, {
+			ui.glyph({ name = "ai", color = "primary" }),
+			ui.label({ text = displayText, fontWeight = "semibold", color = "on_surface" }),
+		}))
+	end
+end
+
+noctalia.state.watch("usage", function(value)
+	usage = value or {}
+	render()
+end)
+
+function update()
+	isVertical = barWidget.isVertical()
+	render()
 end
 
 function onClick()
-	noctalia.msg("panel-toggle", "zumik3-del/opencode-go-usage:panel")
+	noctalia.togglePanel("zumik3-del/opencode-go-usage:panel")
 end
 
-function onContextMenu()
-	return {
-		{ label = "Refresh", action = "refresh", glyph = "refresh" },
-		{ label = "Settings", action = "settings", glyph = "settings" },
-	}
-end
-
-function onIpc(op: string, payload: any)
-	if op == "refresh" then
-		noctalia.msg("plugin-ipc", "zumik3-del/opencode-go-usage:usage", "refresh")
+function onIpc(event: string, payload: any)
+	if event == "refresh" then
+		noctalia.state.set("cmd", "refresh")
 	end
 end

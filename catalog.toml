@@ -1,3 +1,37 @@
-[plugins.opencode-go-usage-v5]
-repo = "https://github.com/zumik3-del/noctalia_plugins"
-path = "opencode-go-usage-v5"
+# This file is auto-generated. Do not edit manually.
+# Do not include it in your commit.
+# Noctalia plugins catalog.
+# Index of every plugin this source ships: the minimum needed to render, search,
+# and compat-check the list. The per-plugin plugin.toml stays authoritative; the
+# host re-reads it on enable. Keep one [[plugin]] row per plugin subdirectory.
+# A [[plugin.release]] row names an older revision for a Noctalia below the tip's
+# plugin_api, so an older release stays installable instead of the plugin vanishing.
+# On every row, updated_at dates the commit that first shipped that row's version.
+
+[[plugin]]
+id = "zumik3-del/opencode-go-usage"
+name = "Opencode Go Usage"
+version = "0.3.6"
+updated_at = 1759000000
+added_at = 1759000000
+author = "zumik3-del"
+license = "MIT"
+icon = "ai"
+description = "Shows Opencode Go AI coding assistant usage limits"
+deprecated = false
+plugin_api = 3
+tags = ["bar", "productivity", "ai"]
+
+[[plugin]]
+id = "zumik3-del/opencode-go-usage-v5"
+name = "Opencode Go Usage v5"
+version = "1.0.0"
+updated_at = 1759000000
+added_at = 1759000000
+author = "zumik3-del"
+license = "MIT"
+icon = "ai"
+description = "Shows Opencode Go AI coding assistant usage limits (Noctalia v5 Luau)"
+deprecated = false
+plugin_api = 3
+tags = ["bar", "productivity", "ai"]

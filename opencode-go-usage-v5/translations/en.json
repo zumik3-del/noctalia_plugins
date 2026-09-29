@@ -1,13 +1,11 @@
 {
-  "settings.bar_limit.label": "Show in bar",
-  "settings.bar_limit.description": "Which usage limit to display in the bar capsule",
-  "settings.bar_limit.5h": "5-hour limit",
-  "settings.bar_limit.week": "Weekly limit",
-  "settings.bar_limit.month": "Monthly limit",
-  "settings.refresh_interval.label": "Refresh interval",
-  "settings.refresh_interval.description": "How often to poll the opencode.ai console for usage",
   "settings.api_key.label": "API key",
-  "settings.api_key.description": "Opencode Go API key (oc_sk_...)",
-  "context.refresh": "Refresh",
-  "context.settings": "Settings"
+  "settings.api_key.description": "Your Opencode Go key, e.g. oc_sk_...",
+  "settings.refresh_interval.label": "Refresh interval",
+  "settings.refresh_interval.description": "How often to poll opencode.ai for usage, in seconds (60-86400).",
+  "settings.bar_limit.label": "Show in bar",
+  "settings.bar_limit.description": "Which usage limit the bar capsule shows.",
+  "settings.bar_limit.option_5h": "5-hour limit",
+  "settings.bar_limit.option_week": "Weekly limit",
+  "settings.bar_limit.option_month": "Monthly limit"
 }

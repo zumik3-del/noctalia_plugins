@@ -1,9 +1,27 @@
 --!nonstrict
+-- Details panel entry: 5-hour / weekly / monthly limit cards with progress bars,
+-- reset countdowns and per-period daily headroom.
+--
+--   panel.render(tree)                 declarative ui.* tree
+--   noctalia.state.watch("usage", cb)   re-render when the service publishes
+--   noctalia.state.set("usage.cmd", 1)  ask the service to refetch now
+--
+-- Children lists are built with table.insert rather than `if ... else nil`
+-- expressions: a nil in the middle of a constructor leaves a hole, and the host
+-- walks the children array positionally.
 
-local function formatPct(fraction: number): string
+local WARNING = "#F5A623"
+
+local usage = noctalia.state.get("usage")
+local busy = false
+
+local function formatPct(fraction)
+	if type(fraction) ~= "number" or fraction < 0 then
+		return "\u{2014}"
+	end
 	local v = fraction * 100
-	if not isfinite(v) then
-		return "—"
+	if v > 999 then
+		v = 999
 	end
 	local r = math.floor(v * 10 + 0.5) / 10
 	if r == math.floor(r) then
@@ -12,11 +30,12 @@ local function formatPct(fraction: number): string
 	return string.format("%.1f%%", r)
 end
 
-local function formatDaily(fraction: number): string
-	local v = fraction * 100
-	if not isfinite(v) then
-		return "—"
+-- Signed average headroom per remaining day, e.g. "+12.3%".
+local function formatDaily(fraction)
+	if type(fraction) ~= "number" or fraction < 0 then
+		return nil
 	end
+	local v = fraction * 100
 	local r = math.floor(v * 10 + 0.5) / 10
 	local sign = v > 0 and "+" or ""
 	if r == math.floor(r) then
@@ -25,126 +44,135 @@ local function formatDaily(fraction: number): string
 	return string.format("%s%.1f%%", sign, r)
 end
 
-local function limitColor(fraction: number): string
+local function limitColor(fraction)
 	if fraction >= 0.97 or fraction > 1.0 then
 		return "error"
 	elseif fraction >= 0.70 then
-		return "warning"
+		return WARNING
 	end
 	return "primary"
 end
 
-local usage = noctalia.state.get("usage") or {}
-
-local function render()
-	if not usage or next(usage) == nil then
-		panel.render(ui.column({ gap = 12, padding = 16 }, {
-			ui.label({ text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" }),
-		}))
-		return
-	end
-
-	local pct5h = usage.rateLimitPercent or -1
-	local pctWeek = usage.secondaryRateLimitPercent or -1
-	local pctMonth = usage.monthlyRateLimitPercent or -1
-
-	local hasAnyLimit = pct5h >= 0 or pctWeek >= 0 or pctMonth >= 0
-
-	if not hasAnyLimit and (usage.usageStatusText or "") == "" then
-		panel.render(ui.column({ gap = 12, padding = 16 }, {
-			ui.label({ text = "Opencode Go is not enabled. Enable it in Settings.", color = "surface_variant" }),
-		}))
-		return
-	end
-
+local function limitCard(card)
 	local children = {}
 
-	table.insert(children, ui.row({ align = "center", justify = "space_between", gap = 8 }, {
-		ui.label({ text = "Usage limits", fontSize = 16, fontWeight = "bold", color = "on_surface" }),
-		if (usage.tierLabel or "") ~= "" then
-			ui.box({ fill = "primary/0.15", radius = 8, paddingH = 12, paddingV = 4 }, {
-				ui.label({ text = usage.tierLabel, fontSize = 12, fontWeight = "semibold", color = "primary" }),
-			})
-		else nil,
+	table.insert(children, ui.row({ justify = "space_between", align = "center" }, {
+		ui.label({ text = card.name, fontSize = 12, color = "on_surface_variant" }),
+		ui.label({ text = formatPct(card.percent), fontSize = 12, fontWeight = "bold", color = limitColor(card.percent) }),
 	}))
 
-	if not hasAnyLimit and (usage.usageStatusText or "") ~= "" then
-		table.insert(children, ui.box({ fill = "error/0.12", radius = 8, padding = 12 }, {
-			ui.label({ text = usage.usageStatusText, color = "error", fontWeight = "semibold" }),
+	table.insert(children, ui.progress({
+		progress = math.min(1, math.max(0, card.percent)),
+		fill = limitColor(card.percent),
+		track = "outline/0.2",
+		height = 8,
+		radius = 4,
+	}))
+
+	local footer = {}
+	if card.reset and card.reset ~= "" then
+		table.insert(footer, ui.label({ text = card.reset, fontSize = 11, color = "on_surface_variant" }))
+	end
+	table.insert(footer, ui.spacer({ flexGrow = 1 }))
+	local daily = formatDaily(card.daily)
+	if daily then
+		table.insert(footer, ui.label({ text = daily, fontSize = 11, fontWeight = "semibold", color = "primary" }))
+	end
+	table.insert(children, ui.row({ justify = "space_between", align = "center" }, footer))
+
+	return ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, children)
+end
+
+local function headerRow()
+	local children = {
+		ui.label({ text = "Opencode Go", fontSize = 16, fontWeight = "bold", color = "on_surface" }),
+	}
+	table.insert(children, ui.spacer({ flexGrow = 1 }))
+	if usage and usage.tier and usage.tier ~= "" then
+		table.insert(children, ui.label({
+			text = usage.tier,
+			fontSize = 12,
+			fontWeight = "semibold",
+			color = usage.tier == "Cancelling" and "error" or "primary",
 		}))
 	end
+	return ui.row({ align = "center", gap = 8 }, children)
+end
 
-	if pct5h >= 0 then
-		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
-			ui.row({ justify = "space_between" }, {
-				ui.label({ text = usage.rateLimitLabel or "5-hour Usage", fontSize = 12, color = "surface_variant" }),
-				ui.label({ text = formatPct(pct5h), fontSize = 12, fontWeight = "bold", color = limitColor(pct5h) }),
-			}),
-			ui.progress({ progress = math.min(1.0, math.max(0, pct5h)), fill = limitColor(pct5h), height = 8, radius = 4 }),
-			ui.row({ justify = "space_between" }, {
-				if (usage.rateLimitResetAt or "") ~= "" then
-					ui.label({ text = usage.rateLimitResetAt, fontSize = 10, color = "surface_variant" })
-				else nil,
-			}),
+local function render()
+	local body = {}
+
+	if not usage then
+		table.insert(body, ui.label({
+			text = "Waiting for the usage service\u2026",
+			color = "on_surface_variant",
 		}))
+	elseif not usage.ok then
+		table.insert(body, ui.label({
+			text = usage.message or "Usage unavailable",
+			color = "error",
+			fontWeight = "medium",
+		}))
+		if usage.message == "Set API key in settings" then
+			table.insert(body, ui.label({
+				text = "Add your oc_sk_... key under Settings \u{2192} Plugins \u{2192} gear icon.",
+				fontSize = 12,
+				color = "on_surface_variant",
+			}))
+		end
+	else
+		local shown = 0
+		for _, key in { "fiveHour", "week", "month" } do
+			local card = usage[key]
+			if type(card) == "table" and card.percent >= 0 then
+				table.insert(body, limitCard(card))
+				shown += 1
+			end
+		end
+		if shown == 0 then
+			table.insert(body, ui.label({
+				text = "No usage meters reported for this account.",
+				color = "on_surface_variant",
+			}))
+		end
 	end
 
-	if pctWeek >= 0 then
-		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
-			ui.row({ justify = "space_between" }, {
-				ui.label({ text = usage.secondaryRateLimitLabel or "Weekly Usage", fontSize = 12, color = "surface_variant" }),
-				ui.label({ text = formatPct(pctWeek), fontSize = 12, fontWeight = "bold", color = limitColor(pctWeek) }),
-			}),
-			ui.progress({ progress = math.min(1.0, math.max(0, pctWeek)), fill = limitColor(pctWeek), height = 8, radius = 4 }),
-			ui.row({ justify = "space_between" }, {
-				if (usage.secondaryRateLimitResetAt or "") ~= "" then
-					ui.label({ text = usage.secondaryRateLimitResetAt, fontSize = 10, color = "surface_variant" })
-				else nil,
-				if (usage.secondaryDailyRemaining or -1) >= -1 then
-					ui.label({
-						text = formatDaily(usage.secondaryDailyRemaining or 0),
-						fontSize = 10,
-						fontWeight = "semibold",
-						color = (usage.secondaryDailyRemaining or 0) >= 0 and "primary" or "error",
-					})
-				else nil,
-			}),
-		}))
-	end
+	local footer = {
+		headerRow(),
+	}
+	table.insert(footer, ui.spacer({ flexGrow = 1 }))
+	table.insert(footer, ui.row({ gap = 8, justify = "end" }, {
+		ui.button({
+			text = "Refresh",
+			glyph = "refresh",
+			variant = "secondary",
+			enabled = not busy,
+			onClick = "onRefresh",
+		}),
+		ui.button({ text = "Close", variant = "ghost", onClick = "onCloseClicked" }),
+	}))
 
-	if pctMonth >= 0 then
-		table.insert(children, ui.column({ gap = 8, padding = 12, fill = "surface_variant/0.4", radius = 8 }, {
-			ui.row({ justify = "space_between" }, {
-				ui.label({ text = usage.monthlyRateLimitLabel or "Monthly Usage", fontSize = 12, color = "surface_variant" }),
-				ui.label({ text = formatPct(pctMonth), fontSize = 12, fontWeight = "bold", color = limitColor(pctMonth) }),
-			}),
-			ui.progress({ progress = math.min(1.0, math.max(0, pctMonth)), fill = limitColor(pctMonth), height = 8, radius = 4 }),
-			ui.row({ justify = "space_between" }, {
-				if (usage.monthlyRateLimitResetAt or "") ~= "" then
-					ui.label({ text = usage.monthlyRateLimitResetAt, fontSize = 10, color = "surface_variant" })
-				else nil,
-				if (usage.monthlyDailyRemaining or -1) >= -1 then
-					ui.label({
-						text = formatDaily(usage.monthlyDailyRemaining or 0),
-						fontSize = 10,
-						fontWeight = "semibold",
-						color = (usage.monthlyDailyRemaining or 0) >= 0 and "primary" or "error",
-					})
-				else nil,
-			}),
-		}))
-	end
+	panel.render(ui.column({ gap = 12, padding = 16, flexGrow = 1 }, { footer }))
+end
 
-	table.insert(children, ui.spacer {})
+function onRefresh()
+	busy = true
+	render()
+	noctalia.state.set("usage.cmd", (noctalia.state.get("usage.cmd") or 0) + 1)
+end
 
-	panel.render(ui.column({ gap = 12, padding = 16 }, children))
+function onCloseClicked()
+	panel.close()
 end
 
 noctalia.state.watch("usage", function(value)
-	usage = value or {}
+	usage = value
+	busy = false
 	render()
 end)
 
 function onOpen(_context)
 	render()
 end
+
+render()

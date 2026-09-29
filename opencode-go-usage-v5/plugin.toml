@@ -1,13 +1,32 @@
 id = "zumik3-del/opencode-go-usage-v5"
 name = "Opencode Go Usage"
-version = "1.0.0"
+version = "1.0.1"
 plugin_api = 3
 author = "zumik3-del"
 license = "MIT"
+icon = "brand-openai"
 description = "Shows Opencode Go AI coding assistant usage limits"
-tags = ["Bar", "Productivity", "AI"]
-dependencies = ["curl"]
+tags = ["bar", "productivity", "ai"]
 
+# Plugin-level settings: one shared set, edited in Settings -> Plugins, readable
+# from every entry via noctalia.getConfig(key).
+[[setting]]
+key = "api_key"
+type = "string"
+label_key = "settings.api_key.label"
+description_key = "settings.api_key.description"
+default = ""
+
+[[setting]]
+key = "refresh_interval_sec"
+type = "int"
+label_key = "settings.refresh_interval.label"
+description_key = "settings.refresh_interval.description"
+default = 1800
+min = 60
+max = 86400
+
+# Widget entry settings: this bar widget's own presentation.
 [[widget]]
 id = "bar"
 entry = "bar.luau"
@@ -19,16 +38,16 @@ entry = "bar.luau"
   description_key = "settings.bar_limit.description"
   default = "5h"
   options = [
-    { value = "5h", label_key = "settings.bar_limit.5h" },
-    { value = "week", label_key = "settings.bar_limit.week" },
-    { value = "month", label_key = "settings.bar_limit.month" },
+    { value = "5h", label_key = "settings.bar_limit.option_5h" },
+    { value = "week", label_key = "settings.bar_limit.option_week" },
+    { value = "month", label_key = "settings.bar_limit.option_month" },
   ]
 
 [[panel]]
 id = "panel"
 entry = "panel.luau"
 width = 400
-height = 320
+height = 340
 placement = "attached"
 position = "auto"
 open_near_click = true
@@ -36,20 +55,3 @@ open_near_click = true
 [[service]]
 id = "usage"
 entry = "service.luau"
-
-[[setting]]
-key = "api_key"
-type = "string"
-label_key = "settings.api_key.label"
-description_key = "settings.api_key.description"
-default = ""
-sensitive = true
-
-[[setting]]
-key = "refresh_interval_sec"
-type = "number"
-label_key = "settings.refresh_interval.label"
-description_key = "settings.refresh_interval.description"
-default = 1800
-min = 60
-max = 86400

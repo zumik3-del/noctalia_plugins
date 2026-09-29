@@ -1,9 +1,27 @@
 --!nonstrict
+-- Bar widget entry for the Opencode Go usage capsule.
+--
+--   barWidget.render(tree)      declarative ui.* tree (replaces the default row)
+--   barWidget.isVertical()      a row in a horizontal bar, a column in a side bar
+--   barWidget.setTooltip(text)  hover text
+--   noctalia.state.watch(...)   re-render when the service publishes new usage
+--   noctalia.togglePanel(id)    left click opens the details panel
+--
+-- The widget owns no polling logic: it only reflects the shared "usage" state.
 
-local function formatPct(fraction: number): string
+local PLUGIN_ID = "zumik3-del/opencode-go-usage-v5"
+local GLYPH = "brand-openai"
+
+local usage = noctalia.state.get("usage")
+local isVertical = false
+
+local function formatPct(fraction)
+	if type(fraction) ~= "number" or fraction < 0 then
+		return nil
+	end
 	local v = fraction * 100
-	if not isfinite(v) then
-		return "—"
+	if v > 999 then
+		v = 999
 	end
 	local r = math.floor(v * 10 + 0.5) / 10
 	if r == math.floor(r) then
@@ -12,69 +30,58 @@ local function formatPct(fraction: number): string
 	return string.format("%.1f%%", r)
 end
 
-local function barPercent(usage: any, mode: string): number
-	if mode == "week" then
-		return usage.secondaryRateLimitPercent or -1
-	elseif mode == "month" then
-		return usage.monthlyRateLimitPercent or -1
+-- The bar shows one limit, chosen by the widget's own "bar_limit" setting.
+local function selectedCard()
+	if type(usage) ~= "table" then
+		return nil
 	end
-	return usage.rateLimitPercent or -1
-end
-
-local function limitLabel(usage: any, mode: string): string
+	local mode = noctalia.getConfig("bar_limit")
 	if mode == "week" then
-		return usage.secondaryRateLimitLabel or "week"
+		return usage.week
 	elseif mode == "month" then
-		return usage.monthlyRateLimitLabel or "month"
+		return usage.month
 	end
-	return usage.rateLimitLabel or "5h"
+	return usage.fiveHour
 end
-
-local usage = noctalia.state.get("usage") or {}
-local isVertical = false
 
 local function render()
-	local mode = noctalia.getConfig("bar_limit") or "5h"
+	local card = selectedCard()
+	local text, tooltip
 
-	local pct = barPercent(usage, mode)
-	local displayText
-	if pct >= 0 then
-		displayText = formatPct(pct)
+	if not usage then
+		text = "\u{2014}"
+		tooltip = "Opencode Go Usage"
+	elseif not usage.ok then
+		text = "\u{2014}"
+		tooltip = "Opencode Go \u{2014} " .. (usage.message or "unavailable")
 	else
-		local status = usage.usageStatusText or ""
-		displayText = status ~= "" and status or "—"
-	end
-
-	local tooltipText
-	if usage and next(usage) ~= nil then
-		local label = limitLabel(usage, mode)
-		if pct >= 0 then
-			tooltipText = "Opencode Go — " .. label .. ": " .. formatPct(pct)
+		local pct = card and formatPct(card.percent)
+		if pct then
+			text = pct
+			tooltip = string.format("Opencode Go \u{2014} %s: %s", card.name, pct)
 		else
-			local status = usage.usageStatusText or ""
-			tooltipText = status ~= "" and ("Opencode Go — " .. status) or "Opencode Go Usage"
+			-- The selected meter is absent from the payload: fall back to the
+			-- compact all-limits summary the service composes.
+			local summary = type(usage.message) == "string" and usage.message or ""
+			text = summary ~= "" and summary or "\u{2014}"
+			tooltip = "Opencode Go \u{2014} " .. text
 		end
-	else
-		tooltipText = "Opencode Go Usage"
+		if usage.tier == "Cancelling" then
+			tooltip = tooltip .. " (cancelling)"
+		end
 	end
 
-	barWidget.setTooltip(tooltipText)
+	barWidget.setTooltip(tooltip)
 
-	if isVertical then
-		barWidget.render(ui.column({ align = "center" }, {
-			ui.glyph({ name = "ai", color = "primary" }),
-			ui.label({ text = displayText, fontWeight = "semibold", color = "on_surface" }),
-		}))
-	else
-		barWidget.render(ui.row({ gap = 6, align = "center" }, {
-			ui.glyph({ name = "ai", color = "primary" }),
-			ui.label({ text = displayText, fontWeight = "semibold", color = "on_surface" }),
-		}))
-	end
+	local container = isVertical and ui.column or ui.row
+	barWidget.render(container({ gap = 6, align = "center" }, {
+		ui.glyph({ name = GLYPH, color = "primary" }),
+		ui.label({ text = text, fontWeight = "semibold" }),
+	}))
 end
 
 noctalia.state.watch("usage", function(value)
-	usage = value or {}
+	usage = value
 	render()
 end)
 
@@ -84,11 +91,9 @@ function update()
 end
 
 function onClick()
-	noctalia.togglePanel("zumik3-del/opencode-go-usage:panel")
+	noctalia.togglePanel(PLUGIN_ID .. ":panel")
 end
 
-function onIpc(event: string, payload: any)
-	if event == "refresh" then
-		noctalia.state.set("cmd", "refresh")
-	end
-end
+-- Draw once immediately: at startup the service has usually not published yet,
+// and update() only fires on the first tick.
+render()

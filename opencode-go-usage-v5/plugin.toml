@@ -46,10 +46,19 @@ open_near_click = true
 id = "usage"
 entry = "service.luau"
 
-  [[service.setting]]
-  key = "api_key"
-  type = "string"
-  label_key = "settings.api_key.label"
-  description_key = "settings.api_key.description"
-  default = ""
-  sensitive = true
+[[setting]]
+key = "api_key"
+type = "string"
+label_key = "settings.api_key.label"
+description_key = "settings.api_key.description"
+default = ""
+sensitive = true
+
+[[setting]]
+key = "refresh_interval_sec"
+type = "number"
+label_key = "settings.refresh_interval.label"
+description_key = "settings.refresh_interval.description"
+default = 1800
+min = 60
+max = 86400

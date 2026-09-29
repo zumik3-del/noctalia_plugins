@@ -9,20 +9,6 @@
 # On every row, updated_at dates the commit that first shipped that row's version.
 
 [[plugin]]
-id = "zumik3-del/opencode-go-usage"
-name = "Opencode Go Usage"
-version = "0.3.6"
-updated_at = 1759000000
-added_at = 1759000000
-author = "zumik3-del"
-license = "MIT"
-icon = "ai"
-description = "Shows Opencode Go AI coding assistant usage limits"
-deprecated = false
-plugin_api = 3
-tags = ["bar", "productivity", "ai"]
-
-[[plugin]]
 id = "zumik3-del/opencode-go-usage-v5"
 name = "Opencode Go Usage v5"
 version = "1.0.0"

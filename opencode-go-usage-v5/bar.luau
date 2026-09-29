@@ -95,5 +95,5 @@ function onClick()
 end
 
 -- Draw once immediately: at startup the service has usually not published yet,
-// and update() only fires on the first tick.
+-- and update() only fires on the first tick.
 render()

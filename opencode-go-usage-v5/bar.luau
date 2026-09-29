@@ -31,11 +31,21 @@ local function formatPct(fraction)
 end
 
 -- The bar shows one limit, chosen by the widget's own "bar_limit" setting.
-local function selectedCard()
-	if type(usage) ~= "table" then
+-- "none" hides the percentage entirely and leaves just the glyph.
+local function selectedMode()
+	local mode = noctalia.getConfig("bar_limit")
+	if mode == "none" then
+		return "none"
+	elseif mode == "week" or mode == "month" then
+		return mode
+	end
+	return "5h"
+end
+
+local function selectedCard(mode)
+	if mode == "none" or type(usage) ~= "table" then
 		return nil
 	end
-	local mode = noctalia.getConfig("bar_limit")
 	if mode == "week" then
 		return usage.week
 	elseif mode == "month" then
@@ -45,7 +55,8 @@ local function selectedCard()
 end
 
 local function render()
-	local card = selectedCard()
+	local mode = selectedMode()
+	local card = selectedCard(mode)
 	local text, tooltip
 
 	if not usage then
@@ -60,8 +71,8 @@ local function render()
 			text = pct
 			tooltip = string.format("Opencode Go \u{2014} %s: %s", card.name, pct)
 		else
-			-- The selected meter is absent from the payload: fall back to the
-			-- compact all-limits summary the service composes.
+			-- No meter for the selected limit (or the bar is in icon-only mode):
+			-- fall back to the compact all-limits summary the service composes.
 			local summary = type(usage.message) == "string" and usage.message or ""
 			text = summary ~= "" and summary or "\u{2014}"
 			tooltip = "Opencode Go \u{2014} " .. text
@@ -73,11 +84,13 @@ local function render()
 
 	barWidget.setTooltip(tooltip)
 
+	local children = { ui.glyph({ name = GLYPH, color = "primary" }) }
+	if mode ~= "none" then
+		table.insert(children, ui.label({ text = text, fontWeight = "semibold" }))
+	end
+
 	local container = isVertical and ui.column or ui.row
-	barWidget.render(container({ gap = 6, align = "center" }, {
-		ui.glyph({ name = GLYPH, color = "primary" }),
-		ui.label({ text = text, fontWeight = "semibold" }),
-	}))
+	barWidget.render(container({ gap = 6, align = "center" }, children))
 end
 
 noctalia.state.watch("usage", function(value)

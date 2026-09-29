@@ -11,7 +11,7 @@
 [[plugin]]
 id = "zumik3-del/opencode-go-usage-v5"
 name = "Opencode Go Usage"
-version = "1.0.1"
+version = "1.0.2"
 updated_at = 1759000000
 added_at = 1759000000
 author = "zumik3-del"

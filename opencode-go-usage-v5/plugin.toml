@@ -1,6 +1,6 @@
 id = "zumik3-del/opencode-go-usage-v5"
 name = "Opencode Go Usage"
-version = "1.0.1"
+version = "1.0.2"
 plugin_api = 3
 author = "zumik3-del"
 license = "MIT"
@@ -41,6 +41,7 @@ entry = "bar.luau"
     { value = "5h", label_key = "settings.bar_limit.option_5h" },
     { value = "week", label_key = "settings.bar_limit.option_week" },
     { value = "month", label_key = "settings.bar_limit.option_month" },
+    { value = "none", label_key = "settings.bar_limit.option_none" },
   ]
 
 [[panel]]

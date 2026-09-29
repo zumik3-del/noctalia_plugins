@@ -2,7 +2,7 @@
   "id": "opencode-go-usage-v5",
   "name": "Opencode Go Usage v5",
   "description": "Shows Opencode Go AI coding assistant usage limits (Noctalia v5 Luau)",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "zumik3-del",
   "tags": ["Bar", "Productivity", "AI"],
   "minNoctaliaVersion": "5.0.0"

@@ -1,4 +1,4 @@
-id = "zumik3-del/opencode-go-usage"
+id = "zumik3-del/opencode-go-usage-v5"
 name = "Opencode Go Usage"
 version = "1.0.0"
 plugin_api = 3
@@ -23,15 +23,6 @@ entry = "bar.luau"
     { value = "week", label_key = "settings.bar_limit.week" },
     { value = "month", label_key = "settings.bar_limit.month" },
   ]
-
-  [[widget.setting]]
-  key = "refresh_interval_sec"
-  type = "number"
-  label_key = "settings.refresh_interval.label"
-  description_key = "settings.refresh_interval.description"
-  default = 1800
-  min = 60
-  max = 86400
 
 [[panel]]
 id = "panel"
